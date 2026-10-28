@@ -59,6 +59,7 @@ const apiHandler: ApiHandler = {
     return response.data;
   },
   getConfig: () => ipcRenderer.invoke('get-config'),
+  setVideoWallMode: (mode: 'single' | 'span-all') => ipcRenderer.invoke('set-video-wall-mode', mode),
   executeXlrEvent: (eventName: keyof IXlrEvents, payload: any) => ipcRenderer.invoke('execute-xlr-event', { eventName, payload }),
   sspGetAd: () => ipcRenderer.invoke('ssp-get-ad'),
   sspReportImpression: (urls: string[], duration: number, lat: number | null, lng: number | null) =>

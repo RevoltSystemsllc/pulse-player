@@ -355,12 +355,29 @@ ipcMain.handle('load-config', async (_event) => await loadConfig());
 
 ipcMain.handle('get-config', async (_event) => appConfig);
 
+ipcMain.handle('set-video-wall-mode', async (_event, mode: 'single' | 'span-all') => {
+  const safeMode = mode === 'span-all' ? 'span-all' : 'single';
+  await config.setVideoWallMode(safeMode);
+  appConfig = JSON.parse(config.toJson());
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    applyWindowGeometry(mainWindow);
+  }
+
+  return appConfig;
+});
+
 // Bind to some events from the renderer for configuration.
 ipcMain.handle('xmds-try-register', async (_event, _config) => {
   console.log('xmds-try-register: ', { _config });
   const configData = _config as ConfigData;
   config.setCms(configData.cmsUrl, configData.cmsKey);
   config.displayName = configData.displayName;
+  await config.setVideoWallMode(configData.videoWallMode === 'span-all' ? 'span-all' : 'single');
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    applyWindowGeometry(mainWindow);
+  }
 
   return await validateAndRegister(new Xmds(config));
 });
@@ -696,12 +713,38 @@ const configureFileManager = () => {
 type WindowGeometry = { x: number, y: number, width: number, height: number };
 
 // Read directly from config.settings rather than config.getSetting(), which turns a 0 into null.
-const getWindowGeometry = (): WindowGeometry => ({
+const getCmsWindowGeometry = (): WindowGeometry => ({
   x: Number(config.settings.offsetX) || 0,
   y: Number(config.settings.offsetY) || 0,
   width: Number(config.settings.sizeX) || 0,
   height: Number(config.settings.sizeY) || 0,
 });
+
+/**
+ * A video wall is one player and one CMS display that spans an extended Windows
+ * desktop. This keeps every panel frame-synchronised instead of running a player
+ * per HDMI output.
+ */
+const getVideoWallGeometry = (): WindowGeometry | null => {
+  if (config.videoWallMode !== 'span-all') return null;
+
+  const displays = screen.getAllDisplays();
+  if (displays.length < 2) {
+    console.warn('[MAIN] Video wall mode is enabled but fewer than two displays are connected.');
+    return null;
+  }
+
+  const left = Math.min(...displays.map((display) => display.bounds.x));
+  const top = Math.min(...displays.map((display) => display.bounds.y));
+  const right = Math.max(...displays.map((display) => display.bounds.x + display.bounds.width));
+  const bottom = Math.max(...displays.map((display) => display.bounds.y + display.bounds.height));
+  const geometry = { x: left, y: top, width: right - left, height: bottom - top };
+
+  console.info('[MAIN] Video wall geometry detected', { displays: displays.length, geometry });
+  return geometry;
+};
+
+const getWindowGeometry = (): WindowGeometry => getVideoWallGeometry() ?? getCmsWindowGeometry();
 
 /**
  * Applies the display profile's offset/size settings to the window. A missing or zero size means

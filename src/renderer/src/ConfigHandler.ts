@@ -191,17 +191,25 @@ export class ConfigHandler {
         return <HTMLInputElement>document.getElementsByName(name)[0];
     }
 
-    readonly handleManualSubmitButton = (evt: Event) => {
+    private static videoWallMode() {
+        return ConfigHandler.manualInput('video-wall-mode') as HTMLSelectElement;
+    }
+
+    readonly handleManualSubmitButton = async (evt: Event) => {
         evt.preventDefault();
         const $submitBtn = evt.target as HTMLInputElement;
 
         const cmsKey = ConfigHandler.manualInput('cms-key').value.trim();
         const displayName = ConfigHandler.manualInput('display-name').value.trim();
         const cmsUrl = ConfigHandler.manualInput('cms-address').value.trim();
+        const videoWallMode = ConfigHandler.videoWallMode().value === 'span-all' ? 'span-all' : 'single';
 
         // Nothing was edited, so there is nothing to register. Skip the round trip and
         // the reload it would trigger, and just go back to playback.
         if (this.reopened && this.isSameCms(cmsUrl, cmsKey) && displayName === (this.config.displayName ?? '').trim()) {
+            if (videoWallMode !== (this.config.videoWallMode ?? 'single')) {
+                this.config = await window.apiHandler.setVideoWallMode(videoWallMode);
+            }
             console.debug('[ConfigHandler] Submitted with no changes, closing without re-registering');
             this.close();
             return;
@@ -219,6 +227,7 @@ export class ConfigHandler {
         this.config.cmsKey = cmsKey;
         this.config.displayName = displayName;
         this.config.cmsUrl = cmsUrl;
+        this.config.videoWallMode = videoWallMode;
 
         this.handleRegisterDisplayCallback()
             .finally(() => {
@@ -615,6 +624,7 @@ export class ConfigHandler {
         (<HTMLInputElement>document.getElementsByName('display-name')[0]).value = this.config.displayName ?? '';
         (<HTMLInputElement>document.getElementsByName('cms-address')[0]).value = this.config.cmsUrl ?? '';
         (<HTMLInputElement>document.getElementsByName('cms-key')[0]).value = this.config.cmsKey ?? '';
+        ConfigHandler.videoWallMode().value = this.config.videoWallMode ?? 'single';
 
         this.clearManualErrors();
 

@@ -36,6 +36,7 @@ export interface ConfigData {
   library: string;
   xmdsVersion?: number;
   displayName?: string;
+  videoWallMode?: 'single' | 'span-all';
   settings: any;
   isConfigured: boolean;
   displayTags?: Record<string, string>;
@@ -85,6 +86,7 @@ export interface ApiHandler {
   loadConfig: () => Promise<ConfigData>;
   xmdsTryRegister: (config: ConfigData) => Promise<void>;
   getConfig: () => Promise<ConfigData>;
+  setVideoWallMode: (mode: 'single' | 'span-all') => Promise<ConfigData>;
   executeXlrEvent: (eventName: keyof IXlrEvents, payload: any) => Promise<void>;
   sspGetAd: () => Promise<SspAdData | null>;
   sspReportImpression: (urls: string[], duration: number, lat: number | null, lng: number | null) => Promise<void>;

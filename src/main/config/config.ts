@@ -175,6 +175,7 @@ export class Config {
   xmrChannel: string | undefined;
   cmsUrl: string | undefined;
   cmsKey: string | undefined;
+  videoWallMode: 'single' | 'span-all' = 'single';
   library: string;
 
   // Settings from the CMS
@@ -234,6 +235,7 @@ export class Config {
       this.macAddress = data.macAddress || this.getMacAddress();
       this.pendingCmsTransfer = data.pendingCmsTransfer ?? null;
       this.proxy = data.proxy ?? null;
+      this.videoWallMode = data.videoWallMode === 'span-all' ? 'span-all' : 'single';
     } else {
       this.hardwareKey = (await machineId()).substring(0, 40);
       this.xmrChannel = randomUUID();
@@ -286,6 +288,7 @@ export class Config {
         platform: this.platform,
         pendingCmsTransfer: this.pendingCmsTransfer,
         proxy: this.proxy,
+        videoWallMode: this.videoWallMode,
       }, null, 2),
     );
   };
@@ -335,6 +338,11 @@ export class Config {
 
     this.cmsUrl = cmsUrl;
     this.cmsKey = cmsKey;
+  }
+
+  async setVideoWallMode(mode: 'single' | 'span-all') {
+    this.videoWallMode = mode;
+    await this.save();
   }
 
   async setPendingCmsTransfer(pending: { cmsUrl: string; cmsKey: string; requestedAt: string }) {
@@ -454,6 +462,7 @@ export class Config {
       library: this.library,
       xmdsVersion: this.xmdsVersion,
       displayName: this.displayName,
+      videoWallMode: this.videoWallMode,
       settings: this.settings,
       isConfigured: this.isConfigured(),
       displayTags: this.displayTags,
