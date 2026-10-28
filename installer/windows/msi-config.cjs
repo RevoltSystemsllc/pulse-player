@@ -30,10 +30,12 @@ const MSI_VERSION_MINOR = 408;
  * value is what makes the new package an upgrade of the old player rather than
  * a second product beside it, and it can never change.
  */
-const UPGRADE_CODE = '443E7578-7FEF-47E8-9078-04DDA8B96F3A';
+// Pulse Player intentionally uses its own product identity so an early pilot
+// cannot silently replace an existing Xibo deployment.
+const UPGRADE_CODE = '9F078909-13B7-46C6-8A4E-E189DC1B1924';
 
-const PRODUCT_NAME = 'Xibo Player';
-const MANUFACTURER = 'Xibo Signage Ltd';
+const PRODUCT_NAME = 'Pulse Player';
+const MANUFACTURER = 'Pulse Digital';
 
 /**
  * Build the MSI version from package.json.

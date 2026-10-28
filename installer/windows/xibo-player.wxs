@@ -9,9 +9,9 @@
                     (out/xibo-player-win32-x64), the output of `electron-forge package`.
     ProductVersion  The MSI's own version, deliberately decoupled from the player's
                     version in package.json.
-    ProductName     "Xibo Player"
-    Manufacturer    "Xibo Signage Ltd"
-    UpgradeCode     443E7578-7FEF-47E8-9078-04DDA8B96F3A
+    ProductName     "Pulse Player"
+    Manufacturer    "Pulse Digital"
+    UpgradeCode     9F078909-13B7-46C6-8A4E-E189DC1B1924
     IconFile        resources/windows/icon.ico, the shared application icon
     LicenseRtf      The repository LICENSE, converted to RTF at build time
 
@@ -37,7 +37,7 @@
     InstallerVersion="500"
     Compressed="yes">
 
-    <SummaryInformation Description="Xibo Digital Signage Player" />
+    <SummaryInformation Description="Pulse Digital media player" />
 
     <!--
       Removes any older version carrying the same UpgradeCode before installing
@@ -63,7 +63,7 @@
       already sets it, and defining it twice is a build error.
     -->
     <Property Id="ARPNOREPAIR" Value="1" />
-    <Property Id="ARPURLINFOABOUT" Value="https://xibosignage.com" />
+    <Property Id="ARPURLINFOABOUT" Value="https://pulsedigitalcms.com" />
 
     <!--
       Where the product landed, for inventory and deployment tools that read it
@@ -143,8 +143,8 @@
           Id="StartMenuShortcut"
           Directory="ProgramMenuFolder"
           Name="$(var.ProductName)"
-          Description="Xibo Digital Signage Player"
-          Target="[INSTALLFOLDER]xibo-player.exe"
+          Description="Pulse Digital media player"
+          Target="[INSTALLFOLDER]pulse-player.exe"
           WorkingDirectory="INSTALLFOLDER"
           Advertise="no" />
 
@@ -162,8 +162,8 @@
           Id="StartupShortcut"
           Directory="StartupFolder"
           Name="$(var.ProductName)"
-          Description="Starts the Xibo Player when Windows starts"
-          Target="[INSTALLFOLDER]xibo-player.exe"
+          Description="Starts Pulse Player when Windows starts"
+          Target="[INSTALLFOLDER]pulse-player.exe"
           WorkingDirectory="INSTALLFOLDER"
           Advertise="no" />
       </Component>

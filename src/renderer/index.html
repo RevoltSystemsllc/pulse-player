@@ -23,15 +23,16 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0" />
-        <meta name="description" content="Xibo Digital Signage" />
-        <title>Xibo Digital Signage</title>
+        <meta name="description" content="Pulse Digital media player" />
+        <title>Pulse Player</title>
     </head>
     <body>
         <div class="page-1 layout" id="config" style="display: none;">
             <button type="button" id="config-close" style="display: none;"
                 title="Close (Esc)" aria-label="Close configuration">&times;</button>
             <div class="top-header">
-                <h3>Choose how to connect your CMS</h3>
+                <div class="pulse-brand-lockup"><span class="pulse-brand-mark" aria-hidden="true"></span><span>Pulse Player</span></div>
+                <h3>Connect this media player</h3>
                 <span class="toggle-config">
                     <button type="button" class="active" data-target="activation-code">
                         Use Activation Code
@@ -49,7 +50,7 @@
                         <div class="activation-code">
                             <h2>Activation Code</h2>
                             <p>
-                                Keep this page open until you've added your display to the CMS.
+                                Keep this page open until this Pulse media player has been added to the CMS.
                             </p>
                             <!-- Text code here -->
                             <code class="code-text"></code>
@@ -116,7 +117,7 @@
                     <div id="configure-manually" class="item1">
                         <div class="configure-manually">
                             <h2>Configure Manually</h2>
-                            <p>Instructions for manual configuration.</p>
+                            <p>Enter the approved CMS information for this Pulse media player.</p>
                             <!-- Form for manaul configuration -->
                             <form action="">
                                 <div class="input-container">
@@ -238,7 +239,7 @@
             <div id="status-content" tabindex="0"></div>
         </div>
         <div id="nav-bar" class="nav-bar--hidden" aria-label="Player navigation">
-            <span class="nav-bar__brand">Xibo Player</span>
+            <span class="nav-bar__brand"><span class="pulse-brand-mark" aria-hidden="true"></span>Pulse Player</span>
             <span class="nav-bar__spacer"></span>
             <button type="button" id="nav-config"
                 title="Open the player configuration page">Configuration</button>
@@ -246,5 +247,6 @@
                 title="Open the status window (i)">Status</button>
         </div>
         <script type="module" src="/src/renderer.ts"></script>
+        <footer class="open-source-notice">Pulse Player is built on Xibo open-source software and includes the applicable AGPLv3 notices.</footer>
     </body>
 </html>

@@ -1,8 +1,8 @@
 {
-  "name": "xibo-player",
+  "name": "pulse-player",
   "version": "4.0.13",
   "versionCode": 4013,
-  "description": "Xibo Digital Signage Player",
+  "description": "Pulse Digital media player, built from the Xibo Player source",
   "main": "./dist/main/index.js",
   "scripts": {
     "start": "electron-vite preview --outDir=dist",

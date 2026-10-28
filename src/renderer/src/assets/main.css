@@ -119,6 +119,44 @@ body {
 .nav-bar__brand {
     font-size: 1rem;
     font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pulse-brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+    font-family: 'Maven Pro', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.pulse-brand-mark {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    border: 3px solid #f4b834;
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px #1677c8, 0 0 0 7px #0d3155;
+}
+
+.open-source-notice {
+    position: fixed;
+    right: 14px;
+    bottom: 10px;
+    z-index: 2001;
+    max-width: 420px;
+    color: #d5e8f7;
+    font-family: 'Maven Pro', sans-serif;
+    font-size: .66rem;
+    line-height: 1.35;
+    opacity: .8;
+    text-align: right;
 }
 
 .nav-bar__spacer {
