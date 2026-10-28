@@ -1,7 +1,8 @@
 {
   "name": "pulse-player",
-  "version": "4.0.13",
-  "versionCode": 4013,
+  "productName": "Pulse Player",
+  "version": "4.0.14",
+  "versionCode": 4014,
   "description": "Pulse Digital media player, built from the Xibo Player source",
   "main": "./dist/main/index.js",
   "scripts": {
@@ -15,7 +16,7 @@
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "install-electron --no"
   },
-  "author": "Xibo Signage Ltd",
+  "author": "Pulse Digital",
   "devDependencies": {
     "@electron-forge/cli": "^7.8.3",
     "@electron-forge/maker-base": "^7.8.3",

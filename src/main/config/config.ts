@@ -311,7 +311,12 @@ export class Config {
   };
 
   isConfigured() {
-    return readCmsField(this.cmsUrl) !== undefined && readCmsField(this.cmsKey) !== undefined;
+    // A CMS URL and key alone are not enough to play content. A partial or copied
+    // configuration has no registered display identity, so it must return to the
+    // activation screen instead of waiting forever on the playback splash.
+    return readCmsField(this.cmsUrl) !== undefined
+      && readCmsField(this.cmsKey) !== undefined
+      && readCmsField(this.displayName) !== undefined;
   }
 
   isLicensed() {

@@ -125,24 +125,17 @@ body {
 }
 
 .pulse-brand-lockup {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    color: #ffffff;
-    font-family: 'Maven Pro', sans-serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
+    display: block;
+    width: min(300px, 72vw);
+    height: auto;
+    margin-bottom: 18px;
 }
 
-.pulse-brand-mark {
-    width: 18px;
-    height: 18px;
-    display: inline-block;
-    border: 3px solid #f4b834;
-    border-radius: 50%;
-    box-shadow: 0 0 0 4px #1677c8, 0 0 0 7px #0d3155;
+.nav-bar__brand img {
+    width: 88px;
+    height: auto;
+    max-height: 34px;
+    object-fit: contain;
 }
 
 .open-source-notice {

@@ -1897,12 +1897,15 @@ const init = async (win: BrowserWindow) => {
 };
 
 app.whenReady().then(() => {
+  app.setName('Pulse Player');
+
   // Keep the display on. A signage screen gets no input, so the OS would otherwise blank it
   // or start the screensaver.
   powerSaveBlocker.start('prevent-display-sleep');
 
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  // Gives Windows taskbar, notifications, and the Start menu a stable Pulse identity.
+  electronApp.setAppUserModelId('com.pulsedigital.player');
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
