@@ -15,6 +15,7 @@ const WXS_FILE = path.join(__dirname, 'xibo-player.wxs');
 const ICON_FILE =
     path.join(PROJECT_ROOT, 'resources', 'windows', 'icon.ico');
 const LICENSE_FILE = path.join(PROJECT_ROOT, 'LICENSE');
+const NOTICE_FILE = path.join(PROJECT_ROOT, 'NOTICE');
 
 /**
  * The dialog set comes from the WiX UI extension, which is a separate package
@@ -153,6 +154,10 @@ class MakerMsi extends MakerBase {
 
     const msiPath = path.join(
       outPath, `${packageJSON.name}-${packageJSON.version}-${arch}.msi`);
+
+    // Keep the fork attribution with the installed player without putting it
+    // on the signage display. WiX harvests this file with the application.
+    fs.copyFileSync(NOTICE_FILE, path.join(dir, 'NOTICE'));
 
     // Written beside the package rather than into the repository: it is build
     // output, and regenerating it keeps it identical to the LICENSE in source.

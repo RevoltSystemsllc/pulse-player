@@ -294,7 +294,7 @@ export async function createFileServer(
 function listen(server: ReturnType<typeof express>, port: number) {
   server.listen(port, () => {
     isListening = true;
-    console.log(`Xibo File Server listening on port ${port}`);
+    console.log(`Pulse Player local file server listening on port ${port}`);
   }).on('error', (error: NodeJS.ErrnoException) => {
     console.error(`[FileServer] Could not listen on port ${port}, trying again in 10 seconds`, {
       code: error.code,

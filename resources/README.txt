@@ -1,7 +1,7 @@
-Xibo Playert Icons
+Pulse Player Icons
 ==================
 
-Icons for Xibo Player application.
+Icons for the Pulse Player application.
 
 Directory Structure:
 --------------------

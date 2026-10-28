@@ -1,9 +1,9 @@
 {
   "name": "pulse-player",
   "productName": "Pulse Player",
-  "version": "4.0.14",
-  "versionCode": 4014,
-  "description": "Pulse Digital media player, built from the Xibo Player source",
+  "version": "4.0.15",
+  "versionCode": 4015,
+  "description": "Pulse Digital media player",
   "main": "./dist/main/index.js",
   "scripts": {
     "start": "electron-vite preview --outDir=dist",

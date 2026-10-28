@@ -92,8 +92,8 @@ module.exports = {
       config: {
         options: {
           icon: 'resources/linux/icons/512x512.png',
-          maintainer: 'Xibo Signage Ltd',
-          homepage: 'https://xibosignage.com',
+          maintainer: 'Pulse Digital',
+          homepage: 'https://pulsedigitalcms.com',
         },
       },
     },

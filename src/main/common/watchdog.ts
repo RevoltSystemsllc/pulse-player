@@ -43,8 +43,8 @@ const RESTART_LOG_FILE = 'watchdog-restarts.json';
 
 const AUTOSTART_ENTRY = `[Desktop Entry]
 Type=Application
-Name=Xibo Player
-Comment=Xibo for Linux Digital Signage Player
+Name=Pulse Player
+Comment=Pulse Digital media player
 Exec=xibo-player
 Terminal=false
 X-GNOME-Autostart-enabled=true

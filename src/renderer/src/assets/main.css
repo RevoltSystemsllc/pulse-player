@@ -138,20 +138,6 @@ body {
     object-fit: contain;
 }
 
-.open-source-notice {
-    position: fixed;
-    right: 14px;
-    bottom: 10px;
-    z-index: 2001;
-    max-width: 420px;
-    color: #d5e8f7;
-    font-family: 'Maven Pro', sans-serif;
-    font-size: .66rem;
-    line-height: 1.35;
-    opacity: .8;
-    text-align: right;
-}
-
 .nav-bar__spacer {
     flex: 1 1 auto;
 }
