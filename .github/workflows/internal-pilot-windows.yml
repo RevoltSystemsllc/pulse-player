@@ -1,0 +1,78 @@
+name: Internal Windows Pilot
+
+# This workflow intentionally produces an unsigned MSI for a controlled internal
+# device test only. It never publishes a release asset and must not be used for
+# customer deployment. The signed release workflow remains the production path.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-unsigned-pilot:
+    name: Build unsigned internal MSI
+    runs-on: windows-latest
+
+    env:
+      WIX_VERSION: '6.0.0'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install WiX Toolset
+        run: |
+          dotnet tool install --global wix --version $env:WIX_VERSION
+          wix extension add -g WixToolset.UI.wixext/$env:WIX_VERSION
+        shell: powershell
+
+      - name: Install dependencies
+        run: npm ci
+        shell: powershell
+
+      - name: Build application bundles
+        run: npm run build
+        shell: powershell
+
+      - name: Build unsigned Windows installer
+        run: npx electron-forge make --platform win32 --arch x64
+        shell: powershell
+
+      - name: Verify pilot artifact
+        run: |
+          $installers = Get-ChildItem -Path './out/make' -File -Recurse |
+            Where-Object { $_.Extension -eq '.msi' }
+
+          if ($installers.Count -ne 1) {
+            Write-Error "Expected one MSI, found $($installers.Count)."
+            exit 1
+          }
+
+          $installer = $installers[0]
+          $signature = Get-AuthenticodeSignature $installer.FullName
+          Write-Host "Pilot installer: $($installer.Name)"
+          Write-Host "Signature state: $($signature.Status)"
+
+          if ($signature.Status -ne 'NotSigned') {
+            Write-Error 'The internal pilot artifact must be unsigned; use the release workflow for signed builds.'
+            exit 1
+          }
+        shell: powershell
+
+      - name: Upload unsigned internal pilot MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-player-UNSIGNED-internal-pilot
+          path: out/make/**/*.msi
+          if-no-files-found: error
+          retention-days: 14
