@@ -46,6 +46,12 @@ env:
   # assets and the Snap Store. Always true for a real release.
   PUBLISH: ${{ github.event_name == 'release' || inputs.upload }}
 
+  # Keep package paths and signature metadata aligned with the branded player.
+  # Electron Forge derives the packaged folder from package.json's name.
+  PLAYER_PACKAGE_NAME: 'pulse-player'
+  PLAYER_DISPLAY_NAME: 'Pulse Digital Player'
+  PLAYER_WEBSITE: 'https://pulsedigitalcms.com'
+
 jobs:
   build-linux:
     # We'll run on Ubuntu as it's required for .deb and .snap packages
@@ -258,7 +264,7 @@ jobs:
         run: npm run build
         shell: powershell
 
-      # Produces out/xibo-player-win32-x64/. Kept separate from `make` so the
+      # Produces out/pulse-player-win32-x64/. Kept separate from `make` so the
       # binaries can be signed in between.
       - name: 'Package Application'
         run: npx electron-forge package --platform win32 --arch x64
@@ -281,14 +287,14 @@ jobs:
           endpoint: ${{ vars.AZURE_SIGNING_ENDPOINT }}
           signing-account-name: ${{ vars.AZURE_SIGNING_ACCOUNT }}
           certificate-profile-name: ${{ vars.AZURE_SIGNING_PROFILE }}
-          files-folder: ${{ github.workspace }}\out\xibo-player-win32-x64
+          files-folder: ${{ github.workspace }}\out\${{ env.PLAYER_PACKAGE_NAME }}-win32-x64
           files-folder-filter: exe,dll,node
           files-folder-recurse: true
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
-          description: 'Xibo Digital Signage Player'
-          description-url: 'https://xibosignage.com'
+          description: '${{ env.PLAYER_DISPLAY_NAME }}'
+          description-url: '${{ env.PLAYER_WEBSITE }}'
 
       # --skip-package reuses the directory signed above instead of rebuilding it.
       - name: 'Build Installers'
@@ -307,8 +313,8 @@ jobs:
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
-          description: 'Xibo Digital Signage Player'
-          description-url: 'https://xibosignage.com'
+          description: '${{ env.PLAYER_DISPLAY_NAME }}'
+          description-url: '${{ env.PLAYER_WEBSITE }}'
 
       # Trusting the signing step's exit code is not enough; check the artefacts
       # that are actually about to be published.
@@ -329,6 +335,16 @@ jobs:
             exit 1
           }
         shell: powershell
+
+      # Manual validation runs do not upload a public release asset. Preserve the
+      # verified MSI as a private workflow artifact for the controlled pilot.
+      - name: 'Upload verified Windows installer'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-player-windows-msi
+          path: out/make/**/*.msi
+          if-no-files-found: error
+          retention-days: 14
 
       - name: 'Upload Installers to Release'
         if: env.PUBLISH == 'true'
