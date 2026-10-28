@@ -9,21 +9,13 @@
 /**
  * The MSI's version is deliberately NOT the player's version.
  *
- * The legacy .NET player ships as 4.407.2. Windows compares installed products
- * field by field, so the player's own 4.0.9 reads as OLDER and an MSI built with
- * it would refuse to install on a fielded screen, reporting that a newer version
- * is already present. The MSI therefore carries its own series, high enough to
- * clear the legacy package for good.
- *
- * KNOWN SPEC DEVIATION, accepted deliberately. Microsoft documents the minor
- * field's maximum as 255 (https://learn.microsoft.com/en-us/windows/win32/msi/productversion),
- * and 500 exceeds it. The legacy package has shipped out of spec in exactly the
- * same way for years with working upgrades, which is the evidence this rests on.
- * If the VM upgrade test shows the replacement not happening, the version is the
- * first thing to suspect: raise MAJOR instead and leave MINOR within 255.
+ * Pulse Player has a distinct UpgradeCode from the legacy Xibo product, so its
+ * MSI can use a valid, independent version series. Windows Installer requires
+ * major and minor values below 256; keeping the version compliant avoids
+ * unpredictable install and upgrade behavior on the pilot devices.
  */
-const MSI_VERSION_MAJOR = 4;
-const MSI_VERSION_MINOR = 408;
+const MSI_VERSION_MAJOR = 5;
+const MSI_VERSION_MINOR = 0;
 
 /**
  * Inherited from the legacy player's Advanced Installer project. This single
