@@ -27,6 +27,19 @@
         <title>Pulse Player</title>
     </head>
     <body>
+        <section id="pulse-heartbeat" aria-label="Pulse Player online and waiting for content">
+            <div class="pulse-heartbeat__ambient pulse-heartbeat__ambient--one"></div>
+            <div class="pulse-heartbeat__ambient pulse-heartbeat__ambient--two"></div>
+            <div class="pulse-heartbeat__content">
+                <img class="pulse-heartbeat__logo" src="/src/assets/images/logo.png" alt="Pulse Digital" />
+                <p class="pulse-heartbeat__eyebrow">PULSE PLAYER</p>
+                <h1>Online and ready</h1>
+                <p class="pulse-heartbeat__message">Waiting for scheduled content</p>
+                <div class="pulse-heartbeat__monitor" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+        </section>
         <div class="page-1 layout" id="config" style="display: none;">
             <button type="button" id="config-close" style="display: none;"
                 title="Close (Esc)" aria-label="Close configuration">&times;</button>

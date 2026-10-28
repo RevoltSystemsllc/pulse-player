@@ -1,8 +1,8 @@
 {
   "name": "pulse-player",
   "productName": "Pulse Player",
-  "version": "4.0.15",
-  "versionCode": 4015,
+  "version": "4.0.16",
+  "versionCode": 4016,
   "description": "Pulse Digital media player",
   "main": "./dist/main/index.js",
   "scripts": {

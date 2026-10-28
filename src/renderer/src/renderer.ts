@@ -40,6 +40,15 @@ const APP_HOST = 'http://localhost:9696/files/';
 let xlr: IXlr;
 let currentSspAd: SspAdData | null = null;
 
+const setPulseHeartbeatVisible = (visible: boolean) => {
+  document.getElementById('pulse-heartbeat')?.classList.toggle('pulse-heartbeat--visible', visible);
+};
+
+const isSplashOnlyLoop = (layouts: unknown[]) => layouts.length === 0 || layouts.every((layout: any) => {
+  const file = Number(layout?.file ?? layout?.layoutId ?? layout?.id ?? 0);
+  return file === 0;
+});
+
 // Hosts data connectors in sandboxed iframes and bridges their realtime data to
 // the main process. Driven by the `update-data-connectors` push from main.
 const dataConnectorManager = new DataConnectorManager(APP_HOST);
@@ -324,6 +333,9 @@ export const startApp = async () => {
 
   let layoutLoop = [splash];
 
+  // Keep a configured display visibly healthy until the CMS sends real content.
+  setPulseHeartbeatVisible(true);
+
   xlr = XiboLayoutRenderer(layoutLoop, [], xlrOptions as any);
   xlr.init().then(async (response: any) => {
     console.log('onConfigure: play schedules');
@@ -377,6 +389,7 @@ window.playerAPI.onStateChange((state) => {
 
 window.playerAPI.onUpdateLoop((layouts) => {
   console.debug('[window.playerAPI.onUpdateLoop]', { layouts });
+  setPulseHeartbeatVisible(isSplashOnlyLoop(layouts));
   if (xlr) {
     console.debug('[window.playerAPI.onUpdateLoop] > Emitting updateLoop to XLR');
     xlr.emitter.emit('updateLoop', layouts);

@@ -28,6 +28,108 @@ body {
     font-family: 'Maven Pro', sans-serif;
 }
 
+/*
+ * The player can be connected before a layout has been published. Keep that
+ * screen intentional and visibly alive rather than leaving a black display.
+ */
+#pulse-heartbeat {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    display: none;
+    overflow: hidden;
+    color: #f7fbff;
+    background:
+        radial-gradient(circle at 18% 18%, rgba(25, 132, 255, .36), transparent 34%),
+        radial-gradient(circle at 82% 80%, rgba(0, 222, 170, .18), transparent 32%),
+        linear-gradient(135deg, #06152a 0%, #0b2e58 48%, #071a30 100%);
+}
+
+#pulse-heartbeat.pulse-heartbeat--visible {
+    display: grid;
+    place-items: center;
+}
+
+.pulse-heartbeat__ambient {
+    position: absolute;
+    width: 44vw;
+    aspect-ratio: 1;
+    border: 1px solid rgba(135, 216, 255, .16);
+    border-radius: 50%;
+    animation: pulse-heartbeat-ripple 4.8s ease-out infinite;
+}
+
+.pulse-heartbeat__ambient--one { animation-delay: -2.4s; }
+.pulse-heartbeat__ambient--two { animation-delay: 0s; }
+
+.pulse-heartbeat__content {
+    position: relative;
+    width: min(760px, 86vw);
+    padding: 4rem 3rem;
+    text-align: center;
+    border: 1px solid rgba(190, 230, 255, .22);
+    border-radius: 28px;
+    background: rgba(5, 21, 42, .42);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, .28);
+    backdrop-filter: blur(10px);
+}
+
+.pulse-heartbeat__logo {
+    width: min(360px, 58vw);
+    height: auto;
+    margin-bottom: 1.8rem;
+    filter: drop-shadow(0 10px 26px rgba(0, 0, 0, .3));
+}
+
+.pulse-heartbeat__eyebrow {
+    margin: 0 0 .7rem;
+    color: #8fd3ff;
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .22em;
+}
+
+#pulse-heartbeat h1 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.8rem);
+    line-height: 1.05;
+}
+
+.pulse-heartbeat__message {
+    margin: 1rem 0 2.2rem;
+    color: #c3d8ec;
+    font-size: clamp(1rem, 1.8vw, 1.3rem);
+}
+
+.pulse-heartbeat__monitor {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    gap: .45rem;
+    height: 38px;
+}
+
+.pulse-heartbeat__monitor span {
+    width: .7rem;
+    border-radius: 999px;
+    background: linear-gradient(#a9e7ff, #1689f5);
+    animation: pulse-heartbeat-bars 1.25s ease-in-out infinite;
+}
+
+.pulse-heartbeat__monitor span:nth-child(1), .pulse-heartbeat__monitor span:nth-child(5) { height: 28%; }
+.pulse-heartbeat__monitor span:nth-child(2), .pulse-heartbeat__monitor span:nth-child(4) { height: 55%; animation-delay: .12s; }
+.pulse-heartbeat__monitor span:nth-child(3) { height: 100%; animation-delay: .24s; }
+
+@keyframes pulse-heartbeat-ripple {
+    from { transform: scale(.5); opacity: .85; }
+    to { transform: scale(1.55); opacity: 0; }
+}
+
+@keyframes pulse-heartbeat-bars {
+    0%, 100% { transform: scaleY(.55); opacity: .6; }
+    50% { transform: scaleY(1); opacity: 1; }
+}
+
 #player_container {
     height: 100%;
 }
