@@ -27,6 +27,7 @@ const MSI_VERSION_MINOR = 0;
 const UPGRADE_CODE = '9F078909-13B7-46C6-8A4E-E189DC1B1924';
 
 const PRODUCT_NAME = 'Pulse Player';
+const EXECUTABLE_NAME = 'Pulse Player.exe';
 const MANUFACTURER = 'Pulse Digital';
 
 /**
@@ -61,6 +62,7 @@ function msiVersion(packageJSON) {
 }
 
 module.exports = {
+  EXECUTABLE_NAME,
   MANUFACTURER,
   MSI_VERSION_MAJOR,
   MSI_VERSION_MINOR,

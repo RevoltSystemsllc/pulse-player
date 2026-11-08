@@ -1,8 +1,8 @@
 {
   "name": "pulse-player",
   "productName": "Pulse Player",
-  "version": "4.0.17",
-  "versionCode": 4017,
+  "version": "4.0.18",
+  "versionCode": 4018,
   "description": "Pulse Digital media player",
   "main": "./dist/main/index.js",
   "scripts": {
@@ -14,7 +14,8 @@
     "make:msi": "npm run build && electron-forge make --platform win32 --arch x64 --targets msi",
     "make:snap": "node scripts/set-snap-version.cjs && mkdir -p out/make/snap/x64/ && snapcraft pack --output out/make/snap/x64/",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
-    "postinstall": "install-electron --no"
+    "postinstall": "install-electron --no",
+    "test:wall": "node scripts/test-wall-capture.cjs"
   },
   "author": "Pulse Digital",
   "devDependencies": {

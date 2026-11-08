@@ -6,7 +6,7 @@ const path = require('node:path');
 const {MakerBase} = require('@electron-forge/maker-base');
 
 const {writeLicenseRtf} = require('./licenseRtf.cjs');
-const {MANUFACTURER, PRODUCT_NAME, UPGRADE_CODE, msiVersion} =
+const {EXECUTABLE_NAME, MANUFACTURER, PRODUCT_NAME, UPGRADE_CODE, msiVersion} =
     require('./msi-config.cjs');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
@@ -147,6 +147,9 @@ class MakerMsi extends MakerBase {
     }
 
     const version = msiVersion(packageJSON);
+    if (!fs.existsSync(path.join(dir, EXECUTABLE_NAME))) {
+      throw new Error(`[maker-msi] Packaged executable missing: ${EXECUTABLE_NAME}`);
+    }
     const outPath = path.resolve(makeDir, 'msi', targetArch);
     await this.ensureDirectory(outPath);
 
@@ -177,6 +180,7 @@ class MakerMsi extends MakerBase {
       '-define', `AppDir=${path.resolve(dir)}`,
       '-define', `ProductVersion=${version}`,
       '-define', `ProductName=${PRODUCT_NAME}`,
+      '-define', `ExecutableName=${EXECUTABLE_NAME}`,
       '-define', `Manufacturer=${MANUFACTURER}`,
       '-define', `UpgradeCode=${UPGRADE_CODE}`,
       '-define', `IconFile=${ICON_FILE}`,

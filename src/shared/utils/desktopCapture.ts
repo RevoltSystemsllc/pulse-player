@@ -1,4 +1,4 @@
-import { desktopCapturer, screen } from "electron";
+import { desktopCapturer, screen, type BrowserWindow } from "electron";
 
 import { describeDisplayEnvironment, getSessionType } from "./displayEnvironment";
 import { captureFromScreenshotDir, FaultChannel } from "./screenshotDirectory";
@@ -6,6 +6,23 @@ import { captureFromScreenshotDir, FaultChannel } from "./screenshotDirectory";
 // The screenshot interval does not wait for the previous request to finish, so guard
 // against overlapping captures stacking up on a device that is slow to respond.
 let capturing = false;
+
+export type CaptureTarget = { kind: 'window'; window: BrowserWindow | undefined };
+
+async function capturePlayerCanvas(target: CaptureTarget, maxDimension: number): Promise<string | null> {
+  if (!target.window || target.window.isDestroyed()) return null;
+
+  let image = await target.window.webContents.capturePage();
+  if (image.isEmpty()) return null;
+
+  const { width, height } = image.getSize();
+  if (maxDimension > 0 && Math.max(width, height) > maxDimension) {
+    image = width >= height
+      ? image.resize({ width: maxDimension, quality: 'best' })
+      : image.resize({ height: maxDimension, quality: 'best' });
+  }
+  return image.toPNG().toString('base64');
+}
 
 /**
  * Work out the size to capture at, honouring the CMS screenShotSize setting.
@@ -98,6 +115,7 @@ async function captureWithDesktopCapturer(maxDimension: number): Promise<string 
 export async function captureDesktop(
   maxDimension: number = 0,
   faults?: FaultChannel,
+  target?: CaptureTarget,
 ): Promise<string | null> {
   if (capturing) {
     console.debug('[desktopCapture] > A capture is already in progress, skipping this request');
@@ -107,6 +125,10 @@ export async function captureDesktop(
   capturing = true;
 
   try {
+    // A wall is one window across multiple monitors; sources[0] loses the other panels.
+    // Missing/destroyed wall windows fail closed rather than uploading one panel as a wall.
+    if (target) return await capturePlayerCanvas(target, maxDimension);
+
     if (getSessionType() === 'wayland') {
       console.debug('[desktopCapture] > Wayland session, reading a screenshot from disk', describeDisplayEnvironment());
       return await captureFromScreenshotDir(maxDimension, faults);

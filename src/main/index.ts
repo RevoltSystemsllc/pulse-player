@@ -791,6 +791,15 @@ let hasSavedGeometry = false;
 
 let mainWindow: BrowserWindow;
 
+const makePlayerScreenshot = (xmds: Xmds) => xmdsMakeScreenshot(
+  xmds,
+  config.getSetting('screenShotSize', 0) ?? 0,
+  faultChannel,
+  config.videoWallMode === 'span-all' && process.platform === 'win32'
+    ? { kind: 'window', window: mainWindow }
+    : undefined,
+);
+
 // How long a configured renderer has to start playing after it loads.
 const RENDERER_START_TIMEOUT_MS = 60 * 1000;
 let rendererStartTimer: NodeJS.Timeout | null = null;
@@ -957,7 +966,7 @@ const initXmrEventHandlers = async function () {
     xmds.collectNow();
   });
   xmr.on('screenShot', async () => {
-    await xmdsMakeScreenshot(xmds, config.getSetting('screenShotSize', 0) ?? 0, faultChannel);
+    await makePlayerScreenshot(xmds);
     await xmds.notifyStatus();
   });
 
@@ -1206,7 +1215,7 @@ const initXmdsEventHandlers = async function (config: Config, xmr: Xmr, win: Bro
     xmr.start(xmrWebSocketAddress, config.getSetting('xmrCmsKey', 'n/a'));
     
     const makeScreenshot = async () => {
-      await xmdsMakeScreenshot(xmds, config.getSetting('screenShotSize', 0) ?? 0, faultChannel);
+      await makePlayerScreenshot(xmds);
       await xmds.notifyStatus();
     };
     const screenshotRequested = data.getSetting('screenShotRequested', 0);

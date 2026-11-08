@@ -40,6 +40,10 @@ jobs:
         run: npm ci
         shell: powershell
 
+      - name: Test wall capture and installer targets
+        run: npm run test:wall
+        shell: powershell
+
       - name: Build application bundles
         run: npm run build
         shell: powershell

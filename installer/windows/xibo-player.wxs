@@ -144,7 +144,7 @@
           Directory="ProgramMenuFolder"
           Name="$(var.ProductName)"
           Description="Pulse Digital media player"
-          Target="[INSTALLFOLDER]pulse-player.exe"
+          Target="[INSTALLFOLDER]$(var.ExecutableName)"
           WorkingDirectory="INSTALLFOLDER"
           Advertise="no" />
 
@@ -163,7 +163,7 @@
           Directory="StartupFolder"
           Name="$(var.ProductName)"
           Description="Starts Pulse Player when Windows starts"
-          Target="[INSTALLFOLDER]pulse-player.exe"
+          Target="[INSTALLFOLDER]$(var.ExecutableName)"
           WorkingDirectory="INSTALLFOLDER"
           Advertise="no" />
       </Component>

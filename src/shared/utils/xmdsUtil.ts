@@ -1,17 +1,18 @@
 import { AxiosResponse } from "axios";
 import { Xmds } from "../../main/xmds/xmds";
-import { captureDesktop } from "./desktopCapture";
+import { captureDesktop, type CaptureTarget } from "./desktopCapture";
 import { FaultChannel } from "./screenshotDirectory";
 
 export async function xmdsMakeScreenshot(
     xmds: Xmds,
     maxDimension: number = 0,
     faults?: FaultChannel,
+    target?: CaptureTarget,
 ): Promise<AxiosResponse<any, any, {}> | Error | {
     message: any;
     status?: any;
 } | undefined> {
-    const stream = await captureDesktop(maxDimension, faults);
+    const stream = await captureDesktop(maxDimension, faults, target);
     console.debug('[xmdsUtils] > [xmdsMakeScreenshot] > Requesting a screenshot', {
         method: 'captureDesktop',
         maxDimension,
