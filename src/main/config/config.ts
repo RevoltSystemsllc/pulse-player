@@ -23,6 +23,7 @@ import { join } from 'path';
 import { machineId } from 'node-machine-id';
 import { randomUUID } from 'crypto';
 import os from 'os';
+import { playbackOrientation } from '../../shared/playbackOrientation';
 
 import { RegisterDisplay } from '../xmds/response/registerDisplay';
 import { State } from '../common/state';
@@ -369,6 +370,7 @@ export class Config {
     this.settings['offsetY'] = registerDisplay.getSetting('offsetY', 0);
     this.settings['sizeX'] = registerDisplay.getSetting('sizeX', 0);
     this.settings['sizeY'] = registerDisplay.getSetting('sizeY', 0);
+    this.settings['pulseOrientation'] = playbackOrientation(registerDisplay.getSetting('pulseOrientation', 'landscape'));
     this.settings['sendCurrentLayoutAsStatusUpdate'] = registerDisplay.getSetting('sendCurrentLayoutAsStatusUpdate', false);
     // Off unless the CMS turns it on, as expected on a signage screen: the cursor then only
     // shows while the mouse is being moved (see updateCursor in renderer.ts).

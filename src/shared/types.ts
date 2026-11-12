@@ -123,6 +123,7 @@ export interface PlayerAPI {
   onXlrSetWidgetDuration: (callback: (widgetId: string, duration: number) => void) => void;
   onUpdateDisplayTags: (callback: (tags: Record<string, string>) => void) => void;
   onUpdateMouseEnabled: (callback: (enabled: boolean) => void) => void;
+  onUpdatePlaybackOrientation: (callback: (orientation: string) => void) => void;
   onMouseMoved: (callback: () => void) => void;
   onUpdateDataConnectors: (callback: (connectors: DataConnectorPayload[]) => void) => void;
   // Fired when a classic (non-data-connector) widget's data file has been

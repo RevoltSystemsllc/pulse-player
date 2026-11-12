@@ -101,6 +101,7 @@ const playerApi: PlayerAPI = {
   onXlrSetWidgetDuration: (callback) => ipcRenderer.on('xlr-set-widget-duration', (_event, widgetId, duration) => callback(widgetId, duration)),
   onUpdateDisplayTags: (callback) => ipcRenderer.on('update-display-tags', (_event, tags) => callback(tags)),
   onUpdateMouseEnabled: (callback) => ipcRenderer.on('update-mouse-enabled', (_event, enabled) => callback(enabled)),
+  onUpdatePlaybackOrientation: (callback) => ipcRenderer.on('update-playback-orientation', (_event, value) => callback(value)),
   onMouseMoved: (callback) => ipcRenderer.on('mouse-moved', () => callback()),
   onUpdateDataConnectors: (callback) => ipcRenderer.on('update-data-connectors', (_event, connectors) => callback(connectors)),
   onNotifyWidgetDataChanged: (callback) => ipcRenderer.on('notify-widget-data-changed', (_event, widgetId) => callback(widgetId)),

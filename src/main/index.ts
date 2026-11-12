@@ -35,6 +35,7 @@ import { monitorEventLoopDelay } from 'perf_hooks';
 
 import icon from '../../resources/icon.png?asset';
 import { Config } from './config/config';
+import { playbackOrientation } from '../shared/playbackOrientation';
 import { Xmds, validateAndRegister } from './xmds/xmds';
 import { State } from './common/state';
 import { createFileServer } from './express';
@@ -1172,7 +1173,12 @@ const initXmdsEventHandlers = async function (config: Config, xmr: Xmr, win: Bro
 
     const prevDisplayTags = JSON.stringify(config.displayTags);
     const prevGeometry = JSON.stringify(getWindowGeometry());
+    const prevOrientation = playbackOrientation(config.settings.pulseOrientation);
     await config.setConfig(data);
+    appConfig = JSON.parse(config.toJson());
+    if (playbackOrientation(config.settings.pulseOrientation) !== prevOrientation) {
+      win.webContents.send('update-playback-orientation', config.settings.pulseOrientation);
+    }
     setMouseEnabled(win, config.settings.enableMouse === true);
 
     // Apply a changed offset/size from the display profile without waiting for a restart,

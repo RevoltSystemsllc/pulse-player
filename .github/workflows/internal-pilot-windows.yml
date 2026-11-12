@@ -5,6 +5,8 @@ name: Internal Windows Pilot
 # customer deployment. The signed release workflow remains the production path.
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/windows-cms-orientation]
 
 permissions:
   contents: read
@@ -42,6 +44,10 @@ jobs:
 
       - name: Test wall capture and installer targets
         run: npm run test:wall
+        shell: powershell
+
+      - name: Test playback orientation settings
+        run: node scripts/test-playback-orientation.cjs
         shell: powershell
 
       - name: Build application bundles

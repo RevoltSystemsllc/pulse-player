@@ -23,7 +23,9 @@ import './assets/main.css';
 import '@xibosignage/xibo-layout-renderer/dist/styles.css';
 
 import $ from 'jquery';
-import XiboLayoutRenderer, { ConsumerPlatform, ELayoutState, InputLayoutType, IXlr, OptionsType } from '@xibosignage/xibo-layout-renderer';
+import XiboLayoutRenderer, { ConsumerPlatform, ELayoutState, InputLayoutType, IXlr, OptionsType, initRenderingDOM } from '@xibosignage/xibo-layout-renderer';
+import { applyPlaybackOrientation } from './playbackOrientation';
+import { playbackOrientation } from '../../shared/playbackOrientation';
 import DefaultLayout from './layout/defaultLayout';
 
 import { ConfigHandler } from './ConfigHandler';
@@ -38,6 +40,8 @@ import { DataConnectorManager } from './dataConnector/dataConnectorManager';
 const APP_HOST = 'http://localhost:9696/files/';
 
 let xlr: IXlr;
+let appliedOrientation = 'landscape';
+let orientationResizeBound = false;
 let currentSspAd: SspAdData | null = null;
 
 const setPulseHeartbeatVisible = (visible: boolean) => {
@@ -307,6 +311,21 @@ const initXlrEventHandlers = function () {
 
 export const startApp = async () => {
   const config = await window.apiHandler.getConfig();
+  appliedOrientation = playbackOrientation(config.settings?.pulseOrientation);
+  initRenderingDOM(document.body);
+  applyPlaybackOrientation(appliedOrientation, window.innerWidth, window.innerHeight);
+  if (!orientationResizeBound) {
+    orientationResizeBound = true;
+    let lastSize = `${window.innerWidth}x${window.innerHeight}`;
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const size = `${window.innerWidth}x${window.innerHeight}`;
+        if (size !== lastSize) { lastSize = size; window.location.reload(); }
+      }, 250);
+    });
+  }
 
   const xlrOptions: Partial<OptionsType> = {
     appHost: APP_HOST,
@@ -357,6 +376,11 @@ export const startApp = async () => {
   // Set global xlr for browser access
   window.xlr = xlr;
 };
+
+window.playerAPI.onUpdatePlaybackOrientation((value) => {
+  // Restart rendering, not the device, so active and preloaded layouts use the new viewport.
+  if (playbackOrientation(value) !== appliedOrientation) window.location.reload();
+});
 
 window.playerAPI.onConfigure(async (config: ConfigData) => {
   console.log('onConfigure');
