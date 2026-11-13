@@ -767,9 +767,11 @@ const getWindowGeometry = (): WindowGeometry => getVideoWallGeometry() ?? getCms
  */
 const applyWindowGeometry = (win: BrowserWindow) => {
   const geometry = getWindowGeometry();
-  win.setAlwaysOnTop(wallPresentation(
+  const { alwaysOnTop } = wallPresentation(
     process.platform, config.videoWallMode, screen.getAllDisplays().length,
-  ).alwaysOnTop);
+  );
+  // Electron's default floating level stays below the Windows taskbar.
+  win.setAlwaysOnTop(alwaysOnTop, alwaysOnTop ? 'screen-saver' : 'normal');
 
   if (geometry.width <= 0 || geometry.height <= 0) {
     console.debug('[MAIN] applyWindowGeometry > No size settings, setting window to fullscreen', geometry);

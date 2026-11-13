@@ -35,7 +35,7 @@ for (const platform of ['win32', 'darwin', 'linux']) {
 const main = fs.readFileSync(path.join(root, 'src/main/index.ts'), 'utf8');
 assert(main.indexOf('app.disableHardwareAcceleration()') < main.indexOf('app.requestSingleInstanceLock()'));
 assert(main.includes("readFileSync(join(app.getPath('userData'), 'rendering-preferences.json'), 'utf8')"));
-assert(main.includes('win.setAlwaysOnTop(wallPresentation('));
+assert(main.includes("win.setAlwaysOnTop(alwaysOnTop, alwaysOnTop ? 'screen-saver' : 'normal')"));
 assert(main.includes('...wallPresentation(process.platform, config.videoWallMode, screen.getAllDisplays().length)'));
 checks += 4;
 const diagnostics = ts.transpileModule(main, {
@@ -61,7 +61,7 @@ vm.runInNewContext(ts.transpileModule(geometrySource + '\nglobalThis.apply = app
 function windowMock(fullscreen = false, maximized = false) {
   return {
     calls: [], handlers: {},
-    setAlwaysOnTop(value) { this.calls.push(['top', value]); },
+    setAlwaysOnTop(value, level) { this.calls.push(['top', value, level]); },
     setBounds(bounds) { this.calls.push(['bounds', JSON.parse(JSON.stringify(bounds))]); },
     isFullScreen: () => fullscreen, isMaximized: () => maximized,
     once(event, handler) { this.handlers[event] = handler; },
@@ -74,7 +74,7 @@ for (const count of [2, 3, 5, 10]) {
   displays = Array.from({length: count}, (_, index) => ({bounds: {x: index * 720, y: 0, width: 720, height: 1280}}));
   const win = windowMock();
   context.apply(win);
-  assert.deepEqual(win.calls, [['top', true], ['bounds', {x: 0, y: 0, width: count * 720, height: 1280}]]);
+  assert.deepEqual(win.calls, [['top', true, 'screen-saver'], ['bounds', {x: 0, y: 0, width: count * 720, height: 1280}]]);
   assert.equal(state.width, count * 720);
   assert.equal(state.height, 1280);
   checks += 3;
@@ -90,11 +90,11 @@ for (const [fullscreen, maximized, event] of [[true, false, 'leave-full-screen']
 }
 displays = [{bounds: {x: 0, y: 0, width: 720, height: 1280}}];
 const one = windowMock(); context.apply(one);
-assert.deepEqual(one.calls, [['top', false], ['bounds', {x: 0, y: 0, width: 1440, height: 1280}]]);
+assert.deepEqual(one.calls, [['top', false, 'normal'], ['bounds', {x: 0, y: 0, width: 1440, height: 1280}]]);
 checks++;
 config.settings = {sizeX: 0, sizeY: 0};
 const fullscreen = windowMock(); context.apply(fullscreen);
-assert.deepEqual(fullscreen.calls, [['top', false], ['fullscreen', true]]);
+assert.deepEqual(fullscreen.calls, [['top', false, 'normal'], ['fullscreen', true]]);
 assert.equal(state.width, 1080); assert.equal(state.height, 1920);
 checks += 3;
 console.log(JSON.stringify({ passed: true, checks, fullBuild: false, installed: false }));
