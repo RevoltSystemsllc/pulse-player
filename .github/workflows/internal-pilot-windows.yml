@@ -6,7 +6,7 @@ name: Internal Windows Pilot
 on:
   workflow_dispatch:
   push:
-    branches: [codex/windows-cms-orientation]
+    branches: [codex/windows-cms-orientation, codex/cafe641-window-recovery]
 
 permissions:
   contents: read
@@ -48,6 +48,10 @@ jobs:
 
       - name: Test playback orientation settings
         run: node scripts/test-playback-orientation.cjs
+        shell: powershell
+
+      - name: Test Windows presentation and rendering preferences
+        run: node scripts/test-window-presentation.cjs
         shell: powershell
 
       - name: Build application bundles

@@ -91,6 +91,20 @@ import Ssp from './common/ssp';
 import SspLayout from './xmds/response/schedule/events/sspLayout';
 import { isValidCmsTarget, performCmsTransfer } from './cms/transferCms';
 import { configureMouse, setMouseEnabled } from './common/mouse';
+import { softwareRenderingRequested, wallPresentation } from './common/windowPresentation';
+
+// Read only a device-local graphics preference, before Electron creates its GPU process.
+try {
+  const preferences = readFileSync(join(app.getPath('userData'), 'rendering-preferences.json'), 'utf8');
+  if (softwareRenderingRequested(process.platform, preferences)) {
+    app.disableHardwareAcceleration();
+    console.info('[MAIN] Device-local software rendering enabled');
+  }
+} catch (error) {
+  if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+    console.warn('[MAIN] Unable to read device-local rendering preferences');
+  }
+}
 
 // Only one player may run at a time. A second copy (for example when both the Startup shortcut
 // and the autostart entry start one at login) would fight this one over port 9696, the
@@ -753,6 +767,9 @@ const getWindowGeometry = (): WindowGeometry => getVideoWallGeometry() ?? getCms
  */
 const applyWindowGeometry = (win: BrowserWindow) => {
   const geometry = getWindowGeometry();
+  win.setAlwaysOnTop(wallPresentation(
+    process.platform, config.videoWallMode, screen.getAllDisplays().length,
+  ).alwaysOnTop);
 
   if (geometry.width <= 0 || geometry.height <= 0) {
     console.debug('[MAIN] applyWindowGeometry > No size settings, setting window to fullscreen', geometry);
@@ -850,6 +867,7 @@ const createWindow = async () => {
     minimizable: false,
     maximizable: false,
     frame: false,
+    ...wallPresentation(process.platform, config.videoWallMode, screen.getAllDisplays().length),
     icon: icon,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -878,6 +896,20 @@ const createWindow = async () => {
     // Apply again once shown, as some window managers place a new window themselves
     applyWindowGeometry(mainWindow);
   })
+
+  // Windows can enumerate the second HDMI output after the login startup task runs.
+  const geometryWindow = mainWindow;
+  const refreshDisplayGeometry = () => {
+    if (!geometryWindow.isDestroyed()) applyWindowGeometry(geometryWindow);
+  };
+  screen.on('display-added', refreshDisplayGeometry);
+  screen.on('display-removed', refreshDisplayGeometry);
+  screen.on('display-metrics-changed', refreshDisplayGeometry);
+  geometryWindow.once('closed', () => {
+    screen.removeListener('display-added', refreshDisplayGeometry);
+    screen.removeListener('display-removed', refreshDisplayGeometry);
+    screen.removeListener('display-metrics-changed', refreshDisplayGeometry);
+  });
 
   // Restore the restart-on-crash behaviour the legacy player got from its watchdog process.
   installCrashRecovery(mainWindow);
