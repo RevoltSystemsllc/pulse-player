@@ -51,8 +51,12 @@ jobs:
           $tools = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/makeappx.exe" |
             Sort-Object { [version]$_.Directory.Parent.Name } -Descending
           if (-not $tools) { throw 'Windows SDK MakeAppx not found' }
+          $apps = @(Get-ChildItem './out' -Directory | Where-Object {
+            $_.Name.EndsWith('-win32-x64') -and (Test-Path -LiteralPath (Join-Path $_.FullName 'Pulse Player.exe'))
+          })
+          if ($apps.Count -ne 1) { throw "Expected exactly one packaged Pulse x64 application, found $($apps.Count)" }
           ./installer/windows/store/build-msix.ps1 `
-            -AppDirectory './out/pulse-player-win32-x64' `
+            -AppDirectory $apps[0].FullName `
             -IdentityJson './installer/windows/store/identity.json' `
             -AssetsDirectory "$env:RUNNER_TEMP/pulse-store-assets" `
             -NewOutputDirectory "$env:RUNNER_TEMP/pulse-store-candidate" `
