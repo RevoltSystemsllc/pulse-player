@@ -28,7 +28,7 @@ jobs:
       - name: Run candidate tests
         run: |
           $ErrorActionPreference = 'Stop'
-          foreach ($test in @('test-store-packaging', 'test-store-startup', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
+          foreach ($test in @('test-store-packaging', 'test-store-lab-identity', 'test-store-startup', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
             node "scripts/$test.cjs"
             if ($LASTEXITCODE -ne 0) { throw "Failed: $test" }
           }
@@ -74,6 +74,27 @@ jobs:
             ${{ runner.temp }}/pulse-store-candidate/build-report.json
             ${{ runner.temp }}/pulse-store-candidate/staging/AppxManifest.xml
             ${{ runner.temp }}/pulse-store-assets/*.png
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build separate Windows 11 lab package (never installs)
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tools = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/makeappx.exe" |
+            Sort-Object { [version]$_.Directory.Parent.Name } -Descending
+          if (-not $tools) { throw 'Windows SDK MakeAppx not found' }
+          ./installer/windows/store/build-lab-msix.ps1 `
+            -AppDirectory "$env:RUNNER_TEMP/pulse-store-candidate/staging/app" `
+            -AssetsDirectory "$env:RUNNER_TEMP/pulse-store-assets" `
+            -NewOutputDirectory "$env:RUNNER_TEMP/pulse-lab-only" `
+            -MakeAppx $tools[0].FullName
+      - name: Upload lab-only artifact separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-LAB-ONLY-windows11
+          path: |
+            ${{ runner.temp }}/pulse-lab-only/*.msix
+            ${{ runner.temp }}/pulse-lab-only/lab-build-report.json
+            ${{ runner.temp }}/pulse-lab-only/lab-identity.json
           if-no-files-found: error
           retention-days: 14
       - name: Capture genuine Windows setup screenshots
