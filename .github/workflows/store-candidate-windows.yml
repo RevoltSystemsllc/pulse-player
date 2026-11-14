@@ -1,0 +1,69 @@
+name: Windows Store Candidate
+
+# Build artifacts only. No Store credentials, release publication or installation.
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/windows-store-msix]
+
+permissions:
+  contents: read
+
+jobs:
+  msix:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install dependencies
+        run: npm ci
+      - name: Run candidate tests
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($test in @('test-store-packaging', 'test-store-startup', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
+            node "scripts/$test.cjs"
+            if ($LASTEXITCODE -ne 0) { throw "Failed: $test" }
+          }
+      - name: Build Windows application (not MSI)
+        run: |
+          npm run build
+          if ($LASTEXITCODE -ne 0) { throw 'Application build failed' }
+          npx electron-forge package --platform win32 --arch x64
+          if ($LASTEXITCODE -ne 0) { throw 'Forge packaging failed' }
+      - name: Generate existing-icon size variants
+        run: ./installer/windows/store/prepare-assets.ps1 -NewOutputDirectory "$env:RUNNER_TEMP/pulse-store-assets"
+      - name: Build and validate unsigned MSIX
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tools = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/makeappx.exe" |
+            Sort-Object { [version]$_.Directory.Parent.Name } -Descending
+          if (-not $tools) { throw 'Windows SDK MakeAppx not found' }
+          ./installer/windows/store/build-msix.ps1 `
+            -AppDirectory './out/pulse-player-win32-x64' `
+            -IdentityJson './installer/windows/store/identity.json' `
+            -AssetsDirectory "$env:RUNNER_TEMP/pulse-store-assets" `
+            -NewOutputDirectory "$env:RUNNER_TEMP/pulse-store-candidate" `
+            -MakeAppx $tools[0].FullName
+          $reportPath = "$env:RUNNER_TEMP/pulse-store-candidate/build-report.json"
+          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+          $report | Add-Member -NotePropertyName sourceCommit -NotePropertyValue $env:GITHUB_SHA
+          $report | ConvertTo-Json | Set-Content -LiteralPath $reportPath -Encoding UTF8
+      - name: Upload candidate only
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-UNSIGNED-store-candidate
+          path: |
+            ${{ runner.temp }}/pulse-store-candidate/*.msix
+            ${{ runner.temp }}/pulse-store-candidate/build-report.json
+            ${{ runner.temp }}/pulse-store-candidate/staging/AppxManifest.xml
+            ${{ runner.temp }}/pulse-store-assets/*.png
+          if-no-files-found: error
+          retention-days: 14

@@ -194,6 +194,12 @@ function ensureLinuxAutostartEntry(): void {
  * key on Windows — no manual registry or shortcut handling needed.
  */
 function ensureWindowsAutostartEntry(): void {
+  // MSIX owns startup through the manifest. Do not create a Run key that pins
+  // a versioned WindowsApps executable or bypasses a user-disabled StartupTask.
+  if (process.windowsStore === true) {
+    console.log('[Watchdog] Using packaged PulsePlayerStartup task; Windows controls its enabled state');
+    return;
+  }
   try {
     app.setLoginItemSettings({ openAtLogin: true });
     console.log('[Watchdog] Configured login item for autostart');
