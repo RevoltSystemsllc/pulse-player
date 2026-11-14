@@ -66,21 +66,36 @@ async function capture(executable, output) {
       await delay(1000);
     }
     assert(ready, 'Real first-launch configuration must be visible');
-    // Use the application's own Hide control; never publish a pairing code.
-    await evaluate(`(() => { const el = document.querySelector('#hide-code'); if (!el.checked) el.click(); return el.checked; })()`);
-    await delay(1000);
-    async function save(name) {
+    // Wait for asynchronous activation initialization before using Hide: the
+    // activation callback resets the checkbox when its first response arrives.
+    let codeReady = false;
+    for (let i = 0; i < 45; i++) {
+      codeReady = await evaluate(`Boolean(document.querySelector('code.code-text')?.textContent?.trim())`);
+      if (codeReady) break;
+      await delay(1000);
+    }
+    assert(codeReady, 'Activation initialization did not finish');
+    const hidden = `Boolean(document.querySelector('#hide-code')?.checked && /^\\u2022{6}$/.test(document.querySelector('code.code-text')?.textContent || ''))`;
+    for (let i = 0; i < 5; i++) {
+      await evaluate(`(() => { const el = document.querySelector('#hide-code'); if (!el.checked) el.click(); })()`);
+      await delay(1000);
+      if (await evaluate(hidden)) break;
+    }
+    assert(await evaluate(hidden), 'Activation code must actually be hidden');
+    async function save(name, guard) {
+      if (guard) assert(await evaluate(guard), 'Screenshot privacy guard failed');
       const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+      if (guard) assert(await evaluate(guard), 'Screenshot privacy state changed during capture');
       const data = Buffer.from(screenshot.data, 'base64');
       assert(data.length > 10000, 'Reject blank/tiny capture');
       assert.equal(data.readUInt32BE(16), 1920);
       assert.equal(data.readUInt32BE(20), 1080);
       fs.writeFileSync(path.join(output, name), data, { flag: 'wx' });
     }
-    await save('01-player-activation-hidden.png');
+    await save('01-player-activation-hidden.png', hidden);
     await evaluate(`document.querySelector('.toggle-config [data-target="configure-manually"]').click()`);
     await delay(1000);
-    const safe = await evaluate(`(() => { const inputs = [...document.querySelectorAll('.config-container input')]; return inputs.every(el => !/key|password|secret/i.test(el.id + ' ' + el.name) || !el.value); })()`);
+    const safe = await evaluate(`(() => { const inputs = [...document.querySelectorAll('.config-container input:not([type="checkbox"]):not([type="radio"])')]; return inputs.every(el => !/key|password|secret/i.test(el.id + ' ' + el.name) || !el.value); })()`);
     assert(safe, 'Manual setup must not contain credentials');
     await save('02-player-manual-setup.png');
     fs.writeFileSync(path.join(output, 'capture-report.json'), JSON.stringify({
