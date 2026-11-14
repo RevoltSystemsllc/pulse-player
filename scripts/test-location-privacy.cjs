@@ -93,12 +93,13 @@ function load(file, deps = {}, globals = {}) {
   const start = main.indexOf('const configureIpc = (win) => {');
   const end = main.indexOf("  ipcMain.on('open-child-window'", start);
   const ipc = main.slice(start, end) + '\n}; configureIpc(win);';
-  const handlers = {}, frame = {url: 'file:///fixtures/renderer/index.html'}, webContents = {mainFrame: frame};
+  const fixtureRendererUrl = require('node:url').pathToFileURL(path.resolve('fixtures/renderer/index.html')).href;
+  const handlers = {}, frame = {url: fixtureRendererUrl}, webContents = {mainFrame: frame};
   let running = false;
   preference = new LocationPrivacy(file);
   vm.runInNewContext(ts.transpileModule(ipc, {compilerOptions: {target: ts.ScriptTarget.ES2022}}).outputText, {
    ipcMain: {handle: (name, handler) => {handlers[name] = handler;}},
-   __dirname: '/fixtures/main', join: path.join, pathToFileURL: require('node:url').pathToFileURL,
+   __dirname: path.resolve('fixtures/main'), join: path.join, pathToFileURL: require('node:url').pathToFileURL,
    is: {dev: false}, process: {env: {}},
    win: {webContents}, locationPrivacy: preference,
    geoLocationManager: {start: () => {running = true;}, stop: () => {running = false;}},
@@ -114,7 +115,7 @@ function load(file, deps = {}, globals = {}) {
   assert.throws(() => handlers['set-device-location-enabled'](local, 'true')); checks++;
   frame.url = 'https://untrusted.example/';
   assert.throws(() => handlers['set-device-location-enabled'](local, true)); checks++;
-  frame.url = 'file:///fixtures/renderer/index.html';
+  frame.url = fixtureRendererUrl;
   equal(handlers['set-device-location-enabled'](local, false), false);
   equal(running, false);
   assert(main.includes('setPermissionCheckHandler(() => false)')); checks++;
