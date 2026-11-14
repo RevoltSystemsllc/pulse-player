@@ -66,6 +66,19 @@ async function capture(executable, output) {
       await delay(1000);
     }
     assert(ready, 'Real first-launch configuration must be visible');
+    let privacyReady = false;
+    for (let i = 0; i < 30; i++) {
+      privacyReady = await evaluate(`Boolean(document.getElementById('device-location-enabled') && !document.getElementById('device-location-enabled').disabled)`);
+      if (privacyReady) break;
+      await delay(500);
+    }
+    assert(privacyReady, 'Local privacy preference must load through the real preload/IPC bridge');
+    const privacy = await evaluate(`(() => {
+      const input = document.getElementById('device-location-enabled');
+      const box = input.getBoundingClientRect();
+      return {off: !input.checked, visible: box.top >= 0 && box.bottom <= innerHeight && box.width > 0};
+    })()`);
+    assert(privacy.off && privacy.visible, 'Device location must default off and its control must be visible');
     // Wait for asynchronous activation initialization before using Hide: the
     // activation callback resets the checkbox when its first response arrives.
     let codeReady = false;

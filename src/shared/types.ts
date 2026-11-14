@@ -109,6 +109,8 @@ export interface ApiHandler {
 }
 
 export interface PlayerAPI {
+  getDeviceLocationEnabled: () => Promise<boolean>;
+  setDeviceLocationEnabled: (enabled: boolean) => Promise<boolean>;
   // Main to render
   onConfigure: (callback: (config: ConfigData) => void) => void;
   onStateChange: (callback: (state: string) => void) => void;

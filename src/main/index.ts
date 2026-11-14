@@ -24,6 +24,7 @@ import { createHash } from 'crypto';
 import { installExtension, JQUERY_DEBUGGER } from 'electron-devtools-installer';
 import { app, WebContentsView, BrowserWindow, ipcMain, session, screen, powerSaveBlocker } from 'electron';
 import { join } from 'path';
+import { pathToFileURL } from 'url';
 import { optimizer, is, electronApp } from '@electron-toolkit/utils';
 import { Xmr } from '@xibosignage/xibo-communication-framework';
 import axios from 'axios';
@@ -81,6 +82,7 @@ import { commandManager, setMacroContext } from '../shared/command/commandManage
 import { registerLocalCommands } from './command/localCommands';
 import { scheduleCriteriaManager } from '../shared/scheduleCriteria/scheduleCriteriaManager';
 import { geoLocationManager } from './common/geoLocationManager';
+import { LocationPrivacy } from './common/locationPrivacy';
 import { xmdsMakeScreenshot } from '../shared/utils/xmdsUtil';
 import { ensureScreenshotDir, FaultChannel } from '../shared/utils/screenshotDirectory';
 import { isWayland } from '../shared/utils/displayEnvironment';
@@ -241,6 +243,7 @@ ipcMain.handle('renderer-log', (_event, level: string, args: any) => {
 let appConfig: ConfigData;
 let statusWindowVisible = false;
 const state = new State();
+let locationPrivacy: LocationPrivacy;
 export const config = new Config(app, process.platform, state);
 registerConfigAdapter({ getConfig: () => JSON.parse(config.toJson()) });
 state.width = 1280;
@@ -255,12 +258,9 @@ state.lanIpAddress = lanIp?.address ?? '';
 // Keep state in sync whenever the geolocation manager accepts a new location
 geoLocationManager.on('geoLocationUpdated', () => {
   const { latitude, longitude } = geoLocationManager.getCurrentLocation();
-  console.debug('[MAIN] geoLocationUpdated event received', {
-    latitude,
-    longitude,
-  });
-  if (latitude !== null) state.latitude = latitude;
-  if (longitude !== null) state.longitude = longitude;
+  // Zero is the existing CMS protocol's unknown-location sentinel.
+  state.latitude = latitude ?? 0;
+  state.longitude = longitude ?? 0;
 });
 
 let xmds: Xmds;
@@ -409,7 +409,7 @@ ipcMain.handle('ssp-get-ad', async () => {
 });
 
 ipcMain.handle('ssp-report-impression', async (_event, { urls, duration, lat, lng }: { urls: string[], duration: number, lat: number | null, lng: number | null }) => {
-  console.debug('[MAIN][ssp-report-impression] Reporting SSP impression', { urls, duration, lat, lng });
+  console.debug('[MAIN][ssp-report-impression] Reporting SSP impression', { count: urls.length, duration });
   if (!ssp) return;
   await ssp.reportImpression(urls, duration, DateTime.now(), lat, lng);
 });
@@ -602,6 +602,27 @@ const collectAndPushStatus = async (win: BrowserWindow) => {
 };
 
 const configureIpc = (win) => {
+  const requireLocalSettingsFrame = (event) => {
+    const expected = is.dev && process.env.ELECTRON_RENDERER_URL
+      ? process.env.ELECTRON_RENDERER_URL
+      : pathToFileURL(join(__dirname, '../renderer/index.html')).href;
+    if (event.sender !== win.webContents || event.senderFrame !== win.webContents.mainFrame ||
+        event.senderFrame.url.split(/[?#]/)[0] !== expected.split(/[?#]/)[0]) {
+      throw new Error('Location preference is available only in the local player settings.');
+    }
+    if (!locationPrivacy) throw new Error('Location settings are not ready.');
+  };
+  ipcMain.handle('get-device-location-enabled', (event) => {
+    requireLocalSettingsFrame(event);
+    return locationPrivacy.getEnabled();
+  });
+  ipcMain.handle('set-device-location-enabled', (event, enabled: boolean) => {
+    requireLocalSettingsFrame(event);
+    locationPrivacy.setEnabled(enabled);
+    if (enabled) geoLocationManager.start();
+    else geoLocationManager.stop();
+    return locationPrivacy.getEnabled();
+  });
   ipcMain.on('open-child-window', (_event, url) => {
     const view = new WebContentsView({ webPreferences: { devTools: is.dev } });
     win.contentView.addChildView(view);
@@ -1956,8 +1977,9 @@ const init = async (win: BrowserWindow) => {
   state.cmsUrl = config.cmsUrl ?? '';
   state.deviceName = config.displayName ?? '';
 
-  // Start resolving the device's location via IP geolocation
-  geoLocationManager.start();
+  locationPrivacy = new LocationPrivacy(join(app.getPath('userData'), 'location-privacy.json'));
+  if (locationPrivacy.getEnabled()) geoLocationManager.start();
+  else geoLocationManager.stop();
 
   console.debug('[MAIN] init > config', {
     config,
@@ -2038,13 +2060,10 @@ app.whenReady().then(() => {
       }
     });
   });
-  session.defaultSession.setPermissionRequestHandler((_, permission, callback) => {
-    if (permission === 'geolocation') {
-      callback(true); // Approve geolocation permission requests
-    } else {
-      callback(false); // Deny all other permission requests
-    }
-  });
+  // CMS content never receives browser location permission. Optional device
+  // location is obtained in main only after the local operator opts in.
+  session.defaultSession.setPermissionCheckHandler(() => false);
+  session.defaultSession.setPermissionRequestHandler((_, _permission, callback) => callback(false));
 
   // Install dev tools extension.
   if (is.dev) {

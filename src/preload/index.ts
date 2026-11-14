@@ -87,6 +87,8 @@ const apiHandler: ApiHandler = {
 contextBridge.exposeInMainWorld('apiHandler', apiHandler);
 
 const playerApi: PlayerAPI = {
+  getDeviceLocationEnabled: () => ipcRenderer.invoke('get-device-location-enabled'),
+  setDeviceLocationEnabled: (enabled: boolean) => ipcRenderer.invoke('set-device-location-enabled', enabled),
   // Main to render
   onConfigure: (callback) => ipcRenderer.on('configure', (_event, config: ConfigData) => callback(config)),
   onStateChange: (callback) => ipcRenderer.on('state-change', (_event, value) => callback(value)),

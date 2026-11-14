@@ -50,11 +50,11 @@ try {
   assert.throws(() => png(path.join(assets, 'StoreLogo.png'), 150));
   const output = path.join(root, 'output');
   prepare(app, id, assets, output);
-  assert.equal(fs.readFileSync(path.join(output, 'AppxManifest.xml'), 'utf8'), result);
+  assert.equal(fs.readFileSync(path.join(output, 'AppxManifest.xml'), 'utf8'), manifest(identity, require('../package.json').versionCode));
   assert.throws(() => prepare(app, id, assets, output));
   assert.throws(() => prepare(app, id, assets, path.join(app, 'nested')));
   assert.equal(fs.readFileSync(path.join(app, 'resources/app.asar'), 'utf8'), 'fixture');
-  for (const name of ['config.json', 'cms_config.json', 'playerDb.db-wal', '.env', 'release.pfx', 'lab.secret']) {
+  for (const name of ['config.json', 'cms_config.json', 'location-privacy.json', 'location-privacy.json.tmp', 'playerDb.db-wal', '.env', 'release.pfx', 'lab.secret']) {
     const file = path.join(app, name);
     fs.writeFileSync(file, 'never-package-device-state');
     assert.throws(() => inspectPayload(app), /must not be packaged/);

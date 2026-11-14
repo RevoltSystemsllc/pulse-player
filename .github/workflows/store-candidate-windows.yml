@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   msix:
+    env:
+      PULSE_STORE_BUILD: '1'
     runs-on: windows-latest
     timeout-minutes: 30
     defaults:
@@ -28,7 +30,7 @@ jobs:
       - name: Run candidate tests
         run: |
           $ErrorActionPreference = 'Stop'
-          foreach ($test in @('test-store-packaging', 'test-store-lab-identity', 'test-store-startup', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
+          foreach ($test in @('test-store-packaging', 'test-store-lab-identity', 'test-store-startup', 'test-location-privacy', 'test-store-dpi', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
             node "scripts/$test.cjs"
             if ($LASTEXITCODE -ne 0) { throw "Failed: $test" }
           }

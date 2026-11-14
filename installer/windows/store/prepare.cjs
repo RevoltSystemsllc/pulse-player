@@ -54,7 +54,7 @@ function inspectPayload(root, relative = '') {
     if (entry.isSymbolicLink() || (!entry.isDirectory() && !entry.isFile())) {
       throw new Error(`Unsupported payload entry: ${name}`);
     }
-    if ((!relative && /^(config\.json|cms_config\.json|rendering-preferences\.json|playerDb\.db(?:-wal|-shm)?)$/i.test(entry.name)) ||
+    if ((!relative && /^(config\.json|cms_config\.json|rendering-preferences\.json|location-privacy\.json(?:\.tmp)?|playerDb\.db(?:-wal|-shm)?)$/i.test(entry.name)) ||
         /^(xibo_library|\.env(?:\..*)?|.*\.(?:pfx|p12|pem|key|secret))$/i.test(entry.name)) {
       throw new Error(`Device state or credential material must not be packaged: ${name}`);
     }

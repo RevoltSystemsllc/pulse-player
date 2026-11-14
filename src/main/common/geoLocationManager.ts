@@ -18,14 +18,14 @@ interface LocationResult {
  *
  * Platform strategy:
  *   Windows  → PowerShell + System.Device.Location (GPS / WiFi / cell)
- *   Other    → Returns { latitude: 0, longitude: 0 }
+ *   Other    → No location provider
  *
  * The manager filters incoming updates using a minimum distance and minimum
  * interval so the player only accepts meaningful location changes.
  *
  * Public methods:
  * - `start()` - Begins polling for location updates.
- * - `stop()`  - Cancels the polling timer.
+ * - `stop()`  - Cancels polling and in-flight requests, and clears coordinates.
  * - `getCurrentLocation()` - Returns the latest accepted coordinates.
  * - `isCurrentLocationInsidePolygon()` - Checks if the current location falls
  *   inside the given polygon for geofence-based layout filtering.
@@ -41,6 +41,9 @@ export class GeoLocationManager {
   private readonly minimumInterval: number;
   private readonly pollInterval: number;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private running = false;
+  private generation = 0;
+  private pending: AbortController | null = null;
 
   /**
    * @param minimumDistance - Minimum movement in meters before an update is accepted.
@@ -67,11 +70,13 @@ export class GeoLocationManager {
    * An initial fetch is performed immediately, then repeated on the configured interval.
    */
   public start() {
-    if (this.pollTimer !== null) {
+    if (this.running) {
       console.debug('[GeoLocationManager] Already started, ignoring start() call');
       return;
     }
 
+    this.running = true;
+    this.generation++;
     this.fetchAndUpdate();
 
     this.pollTimer = setInterval(() => {
@@ -85,25 +90,33 @@ export class GeoLocationManager {
    * Stops the polling timer.
    */
   public stop() {
+    this.running = false;
+    this.generation++;
+    this.pending?.abort();
+    this.pending = null;
     if (this.pollTimer !== null) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
       console.debug('[GeoLocationManager] Polling stopped');
     }
+    this.currentLatitude = null;
+    this.currentLongitude = null;
+    this.updatedAt = null;
+    this.emitter.emit('geoLocationUpdated');
   }
 
   /**
    * Resolves the current location using the best available provider for the platform.
    *
    *   Windows → PowerShell + System.Device.Location
-   *   Other   → { latitude: 0, longitude: 0 }
+   *   Other   → No location provider
    */
-  private async fetchLocation(): Promise<LocationResult> {
+  private async fetchLocation(signal: AbortSignal): Promise<LocationResult | null> {
     if (process.platform === 'win32') {
-      return await this.fetchWindowsLocation() ?? { latitude: 0, longitude: 0 };
+      return await this.fetchWindowsLocation(signal);
     }
 
-    return { latitude: 0, longitude: 0 };
+    return null;
   }
 
   /**
@@ -111,7 +124,7 @@ export class GeoLocationManager {
    * Uses GeoPositionAccuracy.High so the OS will use GPS, WiFi, and cell in order.
    * The script is Base64-encoded to avoid all shell quoting and locale issues.
    */
-  private async fetchWindowsLocation(): Promise<LocationResult | null> {
+  private async fetchWindowsLocation(signal: AbortSignal): Promise<LocationResult | null> {
     // Force en-US culture so decimal separators are always '.' regardless of system locale.
     const script = `
 [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('en-US')
@@ -140,7 +153,7 @@ $watcher.Dispose()
       const { stdout } = await execFileAsync(
         'powershell',
         ['-NonInteractive', '-NoProfile', '-EncodedCommand', encoded],
-        { timeout: 15_000 }
+        { timeout: 15_000, signal, windowsHide: true }
       );
 
       const output = stdout.trim();
@@ -164,7 +177,8 @@ $watcher.Dispose()
     const latitude = parseFloat(parts[0]);
     const longitude = parseFloat(parts[1]);
 
-    if (!isFinite(latitude) || !isFinite(longitude)) return null;
+    if (!isFinite(latitude) || !isFinite(longitude) ||
+        Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
 
     return { latitude, longitude };
   }
@@ -173,9 +187,20 @@ $watcher.Dispose()
    * Fetches a fresh location and feeds it into the update filter.
    */
   private async fetchAndUpdate() {
+    if (!this.running || this.pending) return;
+    const generation = this.generation;
+    const controller = new AbortController();
+    this.pending = controller;
     console.debug('[GeoLocationManager] Fetching location');
-    const result = await this.fetchLocation();
-    this.onUpdate(result.latitude, result.longitude);
+    try {
+      const result = await this.fetchLocation(controller.signal);
+      // An old provider response must never undo a local opt-out or restart.
+      if (this.running && generation === this.generation && result) {
+        this.onUpdate(result.latitude, result.longitude);
+      }
+    } finally {
+      if (this.pending === controller) this.pending = null;
+    }
   }
 
   /**
@@ -185,7 +210,6 @@ $watcher.Dispose()
   private onUpdate(newLatitude: number, newLongitude: number) {
     const now = Date.now();
 
-    console.debug('[GeoLocationManager] Received location update', { newLatitude, newLongitude });
 
     if (this.currentLatitude === null ||
         this.currentLongitude === null ||
@@ -195,10 +219,7 @@ $watcher.Dispose()
       this.currentLongitude = newLongitude;
       this.updatedAt = now;
 
-      console.debug('[GeoLocationManager] Initial location set', {
-        latitude: this.currentLatitude,
-        longitude: this.currentLongitude,
-      });
+      console.debug('[GeoLocationManager] Initial location set');
 
       this.emitter.emit('geoLocationUpdated');
       return;
@@ -221,10 +242,7 @@ $watcher.Dispose()
     this.currentLongitude = newLongitude;
     this.updatedAt = now;
 
-    console.debug('[GeoLocationManager] Location update accepted', {
-      latitude: this.currentLatitude,
-      longitude: this.currentLongitude,
-    });
+    console.debug('[GeoLocationManager] Location update accepted');
 
     this.emitter.emit('geoLocationUpdated');
   }

@@ -63,6 +63,10 @@ function foreignPrebuilds() {
 
 module.exports = {
   packagerConfig: {
+    // Keep the legacy MSI path unchanged while qualifying explicit Store DPI metadata.
+    ...(process.env.PULSE_STORE_BUILD === '1' && targetPlatform() === 'win32' ? {
+      win32metadata: { 'application-manifest': require('node:path').join(__dirname, 'installer/windows/store/player.exe.manifest') },
+    } : {}),
     ignore: [
       /^\/src/,
       /(.eslintrc.js)|(.gitignore)|(electron.vite.config.js)|(forge.config.cjs)|(tsconfig.*)/,

@@ -55,6 +55,12 @@
                     </button>
                 </span>
             </div>
+            <section class="location-privacy" aria-label="Device location privacy" style="padding: 10px 24px;">
+                <label><input type="checkbox" id="device-location-enabled" disabled />
+                    Share this device's location with its connected CMS</label>
+                <p style="margin: 4px 0; font-size: 0.85em;">Off by default. Enables location-based schedules and, if configured by your CMS, location-based ad reporting. Turn off here at any time to stop collection and future sharing. This does not delete location already received by your CMS. Embedded content cannot access device location.</p>
+                <p id="device-location-status" role="status" aria-live="polite"></p>
+            </section>
             <!-- Activation Code and Configure Manually -->
             <div class="active-page">
                 <!-- Activation Code -->

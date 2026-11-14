@@ -25,6 +25,7 @@ import { DateTime } from 'luxon';
 import { SspAd } from '../xmds/response/schedule/sspAd';
 import { Config } from '../config/config';
 import { SspAdData } from '../../shared/types';
+import { geoLocationManager } from './geoLocationManager';
 
 function getFirstElementChild(el: XmlElement): XmlElement | null {
   for (let i = 0; i < el.childNodes.length; i++) {
@@ -448,6 +449,10 @@ export default class Ssp {
     lat: number | null,
     lng: number | null
   ) {
+    // Ignore coordinates cached by a renderer before the operator opted out.
+    const location = geoLocationManager.getCurrentLocation();
+    lat = location.latitude;
+    lng = location.longitude;
     console.debug('[Ssp::reportImpression] Reporting to ' + urls.length + ' urls', {
       method: 'Ssp: reportImpression',
     });
@@ -461,7 +466,7 @@ export default class Ssp {
         .replace('[LAT]', '' + lat)
         .replace('[LNG]', '' + lng);
 
-      console.debug('[Ssp::reportImpression] ' + url, { method: 'Ssp: reportImpression' });
+      console.debug('[Ssp::reportImpression] Sending impression', { method: 'Ssp: reportImpression' });
       axios.get(url).catch((e) =>
         console.error('[Ssp::reportImpression] Failed: ' + e.message)
       );

@@ -33,6 +33,8 @@ export class ConfigHandler {
 
     /** Guards init() so reopening the page doesn't stack a second set of listeners. */
     private initialised = false;
+    private locationListenerInstalled = false;
+    private savedLocationEnabled = false;
 
     /**
      * True when the page was reopened from the on-screen nav bar on a player that is
@@ -175,6 +177,38 @@ export class ConfigHandler {
 
         // Populate config page details section
         this.setConfigDetails();
+        void this.initLocationPreference();
+    }
+
+    private async initLocationPreference() {
+        const input = document.getElementById('device-location-enabled') as HTMLInputElement | null;
+        const status = document.getElementById('device-location-status');
+        if (!input || !status) return;
+        input.disabled = true;
+        try {
+            this.savedLocationEnabled = await window.playerAPI.getDeviceLocationEnabled();
+            input.checked = this.savedLocationEnabled;
+            input.disabled = false;
+            status.textContent = this.savedLocationEnabled ? 'Device location sharing is on.' : 'Device location sharing is off.';
+        } catch {
+            status.textContent = 'Location settings could not be read. Reopen player settings to retry.';
+            return;
+        }
+        if (this.locationListenerInstalled) return;
+        this.locationListenerInstalled = true;
+        input.addEventListener('change', async () => {
+            input.disabled = true;
+            try {
+                this.savedLocationEnabled = await window.playerAPI.setDeviceLocationEnabled(input.checked);
+                input.checked = this.savedLocationEnabled;
+                status.textContent = this.savedLocationEnabled ? 'Device location sharing is on.' : 'Device location sharing is off. Previously shared data remains with your CMS.';
+            } catch {
+                input.checked = this.savedLocationEnabled;
+                status.textContent = 'Could not save your change. The previous location setting remains in effect.';
+            } finally {
+                input.disabled = false;
+            }
+        });
     }
 
     /**
@@ -603,10 +637,12 @@ export class ConfigHandler {
      * at the display — see the guards in handleCodeInterval().
      */
     open(options: ConfigHandlerOpenOptions = {}) {
+        const wasInitialised = this.initialised;
         this.reopened = true;
         this.onClose = options.onClose;
 
         this.init();
+        if (wasInitialised) void this.initLocationPreference();
 
         // Full-bleed and opaque, since layout content is still playing behind it.
         this.$configPanel!.classList.add('config--overlay');
