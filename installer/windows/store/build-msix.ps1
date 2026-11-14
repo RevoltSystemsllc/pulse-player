@@ -23,12 +23,14 @@ if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notm
 $output = [IO.Path]::GetFullPath($NewOutputDirectory)
 $null = New-Item -ItemType Directory -Path $output
 $staging = Join-Path $output 'staging'
-& node (Join-Path $PSScriptRoot 'prepare.cjs') $AppDirectory $IdentityJson $AssetsDirectory $staging
-if ($LASTEXITCODE -ne 0) { throw 'Staging failed; no package was created.' }
+$stageLog = Join-Path $output 'staging.log'
+& node (Join-Path $PSScriptRoot 'prepare.cjs') $AppDirectory $IdentityJson $AssetsDirectory $staging 2>&1 | Tee-Object -FilePath $stageLog
+if ($LASTEXITCODE -ne 0) { throw "Staging failed; no package was created. $(Get-Content -LiteralPath $stageLog -Raw)" }
 $package = Join-Path $output 'PulsePlayer-UNSIGNED-StoreCandidate.msix'
 # /no prevents overwriting. Omitting /nv keeps SDK semantic validation enabled.
-& $tool.FullName pack /d $staging /p $package /h SHA256 /no
-if ($LASTEXITCODE -ne 0) { throw 'MakeAppx validation/pack failed. Do not submit any partial artifact.' }
+$packLog = Join-Path $output 'makeappx.log'
+& $tool.FullName pack /d $staging /p $package /h SHA256 /no 2>&1 | Tee-Object -FilePath $packLog
+if ($LASTEXITCODE -ne 0) { throw "MakeAppx validation/pack failed. Do not submit any partial artifact. $(Get-Content -LiteralPath $packLog -Raw)" }
 $hash = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant()
 [ordered]@{
     candidateOnly = $true
