@@ -79,6 +79,19 @@ async function capture(executable, output) {
       return {off: !input.checked, visible: box.top >= 0 && box.bottom <= innerHeight && box.width > 0};
     })()`);
     assert(privacy.off && privacy.visible, 'Device location must default off and its control must be visible');
+    const privacyContrast = await evaluate(`(() => {
+      const section = document.querySelector('.location-privacy');
+      const rgb = value => value.match(/[0-9.]+/g).slice(0, 3).map(Number).map(v => {
+        v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+      });
+      const luminance = color => rgb(color).reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
+      const background = luminance(getComputedStyle(section).backgroundColor);
+      return ['label', 'p', '#device-location-status'].map(selector => {
+        const foreground = luminance(getComputedStyle(section.querySelector(selector)).color);
+        return (Math.max(background, foreground) + .05) / (Math.min(background, foreground) + .05);
+      });
+    })()`);
+    assert(privacyContrast.every(ratio => ratio >= 4.5), 'Location consent text must have readable contrast');
     // Wait for asynchronous activation initialization before using Hide: the
     // activation callback resets the checkbox when its first response arrives.
     let codeReady = false;
