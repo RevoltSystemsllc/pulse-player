@@ -634,6 +634,12 @@ const showNavBar = () => {
   $('#nav-bar').removeClass('nav-bar--hidden');
 
   navBarHideTimer = setTimeout(() => {
+    const nav = document.getElementById('nav-bar');
+    // Do not move a button between pointer-down/up or hide a keyboard user's focus.
+    if (nav && (nav.matches(':hover') || nav.contains(document.activeElement))) {
+      showNavBar();
+      return;
+    }
     hideNavBar();
   }, NAV_BAR_IDLE_TIMEOUT * 1000);
 };

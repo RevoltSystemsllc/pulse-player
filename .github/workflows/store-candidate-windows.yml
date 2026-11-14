@@ -30,6 +30,10 @@ jobs:
       - name: Run candidate tests
         run: |
           $ErrorActionPreference = 'Stop'
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd 'installer/windows/store/inspect-dpi.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count) { throw "DPI diagnostic syntax errors: $parseErrors" }
           foreach ($test in @('test-store-packaging', 'test-store-lab-identity', 'test-store-startup', 'test-location-privacy', 'test-store-dpi', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
             node "scripts/$test.cjs"
             if ($LASTEXITCODE -ne 0) { throw "Failed: $test" }
