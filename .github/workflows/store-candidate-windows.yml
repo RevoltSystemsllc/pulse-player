@@ -76,3 +76,21 @@ jobs:
             ${{ runner.temp }}/pulse-store-assets/*.png
           if-no-files-found: error
           retention-days: 14
+      - name: Capture genuine Windows setup screenshots
+        run: |
+          $apps = @(Get-ChildItem './out' -Directory | Where-Object {
+            $_.Name.EndsWith('-win32-x64') -and (Test-Path -LiteralPath (Join-Path $_.FullName 'Pulse Player.exe'))
+          })
+          if ($apps.Count -ne 1) { throw 'Expected exactly one player executable' }
+          node scripts/capture-store-windows.cjs (Join-Path $apps[0].FullName 'Pulse Player.exe') "$env:RUNNER_TEMP/pulse-store-screenshots"
+          if ($LASTEXITCODE -ne 0) { throw 'Windows screenshot qualification failed' }
+      - name: Upload screenshot review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulse-store-screenshot-review
+          path: |
+            ${{ runner.temp }}/pulse-store-screenshots/*.png
+            ${{ runner.temp }}/pulse-store-screenshots/capture-report.json
+          if-no-files-found: warn
+          retention-days: 14
