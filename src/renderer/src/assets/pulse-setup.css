@@ -13,8 +13,10 @@
   max-width: none;
   margin: 0;
   height: 100vh;
-  padding: clamp(24px, 4vw, 76px);
+  padding: clamp(24px, 3vw, 56px) clamp(24px, 4vw, 76px);
   overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #2b5967 #071923;
   color: var(--setup-ink);
   font-family: 'Maven Pro', sans-serif;
   background: radial-gradient(ellipse at 95% 10%, #17485c 0, transparent 48%),

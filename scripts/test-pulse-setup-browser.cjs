@@ -95,6 +95,9 @@ fs.mkdirSync(output, {recursive: true});
       assert.equal(await page.locator('#nav-config').isVisible(), false); checks++;
       assert.equal(requests.some(url => /graphic-0/.test(url)), false); checks++;
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true); checks++;
+      if (width === 1920) {
+        assert.equal(await page.locator('#config').evaluate(e => e.scrollHeight <= e.clientHeight), true); checks++;
+      }
       assert.equal(await page.evaluate(() => window.SetupPolicy.pulsePortalUrl), 'https://ha-test.pulsedigitalcms.com/login'); checks++;
       assert.deepEqual(await page.evaluate(() => [
         'https://ha-test.pulsedigitalcms.com', 'https://ha-test.pulsedigitalcms.com/',
