@@ -81,10 +81,12 @@ async function capture(executable, output) {
     assert(privacy.off && privacy.visible, 'Device location must default off and its control must be visible');
     const setupFit = await evaluate(`(() => {
       const panel = document.getElementById('config');
-      return !document.body.classList.contains('pulse-setup-beta') ||
-        (panel.scrollHeight <= panel.clientHeight && panel.scrollWidth <= panel.clientWidth);
+      return {fits: !document.body.classList.contains('pulse-setup-beta') ||
+        (panel.scrollHeight <= panel.clientHeight && panel.scrollWidth <= panel.clientWidth),
+        height: panel.clientHeight, contentHeight: panel.scrollHeight,
+        width: panel.clientWidth, contentWidth: panel.scrollWidth};
     })()`);
-    assert(setupFit, 'Pulse lab setup must fit the actual Windows 1920x1080 viewport without overflow');
+    assert(setupFit.fits, `Pulse lab setup must fit the Windows viewport: ${JSON.stringify(setupFit)}`);
     const dpiProbe = spawnSync('powershell.exe', ['-NoProfile', '-File',
       path.join(__dirname, '../installer/windows/store/verify-ci-dpi.ps1'),
       '-PlayerProcessId', String(child.pid), '-ExpectedExecutable', executable,

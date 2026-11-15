@@ -13,7 +13,7 @@
   max-width: none;
   margin: 0;
   height: 100vh;
-  padding: clamp(24px, 3vw, 56px) clamp(24px, 4vw, 76px);
+  padding: clamp(20px, 2.5vh, 32px) clamp(24px, 4vw, 76px);
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: #2b5967 #071923;
@@ -21,7 +21,7 @@
   font-family: 'Maven Pro', sans-serif;
   background: radial-gradient(ellipse at 95% 10%, #17485c 0, transparent 48%),
     repeating-linear-gradient(90deg, transparent 0 95px, #ffffff03 95px 96px), #071923;
-  gap: 24px;
+  gap: 16px;
   align-items: stretch;
   justify-content: flex-start;
 }
