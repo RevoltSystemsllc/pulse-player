@@ -1,0 +1,21 @@
+const assert = require('node:assert/strict');
+const { audit } = require('./audit-wack-report.cjs');
+const expected = 'Pulse.Player.Lab_4.0.4023.0_x64__fixture';
+const report = (result = 'PASS', message = '', subject = expected, optional = 'FALSE') =>
+  `<REPORT OVERALL_RESULT="WARNING" PARTIAL_RUN="TRUE"><APPLICATIONS><PackageManifest PackageFullName="${subject}"/></APPLICATIONS><TEST INDEX="92" NAME="DPI" OPTIONAL="${optional}"><MESSAGES><MESSAGE TEXT="${message}"/></MESSAGES><RESULT>${result}</RESULT></TEST></REPORT>`;
+assert(audit(report(), expected).requiredChecksPassed);
+assert(audit('\uFEFF' + report(), expected).requiredChecksPassed);
+assert(!audit(report('WARNING'), expected).requiredChecksPassed);
+const stale = audit(report('WARNING', 'Failed C:\\WindowsApps\\Pulse.Player.Lab_4.0.4022.0_x64__fixture\\app\\Player.exe'), expected);
+assert.deepEqual(stale.stalePackageReferences, ['Pulse.Player.Lab_4.0.4022.0_x64__fixture']);
+assert.deepEqual(audit(report('PASS', `File C:\\WindowsApps\\${expected}\\app\\Player.exe`), expected).stalePackageReferences, []);
+assert(!audit(report('PASS', 'C:\\\\WindowsApps\\\\Pulse.Player.Lab_4.0.4022.0_x64__fixture\\\\app\\\\Player.exe'), expected).requiredChecksPassed);
+const dependency = audit(report('PASS', 'C:\\WindowsApps\\Microsoft.Framework_1.0.0.0_x64__fixture\\app\\lib.dll'), expected);
+assert(dependency.requiredChecksPassed && dependency.otherPackageReferences.length === 1);
+assert.throws(() => audit(report('PASS', '', 'other_package'), expected), /subject/);
+assert.throws(() => audit('<!DOCTYPE REPORT><REPORT/>', expected), /Unsupported/);
+assert.throws(() => audit('<not-a-report/>', expected));
+assert.throws(() => audit(report(), '../bad'));
+assert(!audit(report('FAIL', '', expected, 'TRUE'), expected).requiredChecksPassed);
+assert.equal(audit(report('FAIL', '', expected, 'TRUE'), expected).optionalFindings.length, 1);
+console.log(JSON.stringify({ passed: true, checks: 13, scope: 'Report-audit fixtures; not Windows or Store certification' }));

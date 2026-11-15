@@ -34,7 +34,7 @@ jobs:
           $parseErrors = $null
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd 'installer/windows/store/inspect-dpi.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
           if ($parseErrors.Count) { throw "DPI diagnostic syntax errors: $parseErrors" }
-          foreach ($test in @('test-store-packaging', 'test-store-lab-identity', 'test-store-startup', 'test-location-privacy', 'test-store-dpi', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
+          foreach ($test in @('test-store-packaging', 'test-store-lab-identity', 'test-store-startup', 'test-location-privacy', 'test-store-dpi', 'test-wack-report-audit', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
             node "scripts/$test.cjs"
             if ($LASTEXITCODE -ne 0) { throw "Failed: $test" }
           }
@@ -44,6 +44,27 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Application build failed' }
           npx electron-forge package --platform win32 --arch x64
           if ($LASTEXITCODE -ne 0) { throw 'Forge packaging failed' }
+      - name: Validate the embedded Windows application manifest
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $mt = @(Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/mt.exe" |
+            Sort-Object { [version]$_.Directory.Parent.Name } -Descending)[0].FullName
+          if (-not $mt -or (Get-AuthenticodeSignature $mt).Status -ne 'Valid') { throw 'Verified Microsoft manifest tool required' }
+          $apps = @(Get-ChildItem './out' -Directory | Where-Object {
+            $_.Name.EndsWith('-win32-x64') -and (Test-Path (Join-Path $_.FullName 'Pulse Player.exe'))
+          })
+          if ($apps.Count -ne 1) { throw 'Expected one packaged application' }
+          $manifest = "$env:RUNNER_TEMP/pulse-player-embedded.manifest"
+          $exe = Join-Path $apps[0].FullName 'Pulse Player.exe'
+          & $mt -nologo ("-inputresource:" + $exe + ";#1") ("-out:" + $manifest)
+          if ($LASTEXITCODE -ne 0) { throw 'Embedded manifest extraction failed' }
+          & $mt -nologo -manifest $manifest -validate_manifest
+          if ($LASTEXITCODE -ne 0) { throw 'Native Windows manifest validation failed' }
+          [xml]$xml = Get-Content $manifest -Raw
+          $first = @($xml.DocumentElement.ChildNodes | Where-Object NodeType -eq Element)[0]
+          if ($first.LocalName -ne 'assemblyIdentity' -or $first.GetAttribute('name') -ne 'PulseDigitalCMS.PulseDigitalCMSPlayer' -or $first.GetAttribute('type') -ne 'win32') { throw 'Embedded application identity missing' }
+          @{sourceCommit=$env:GITHUB_SHA;nativeManifestValidationPassed=$true;installedRetestPassed=$false;wackPassed=$false} |
+            ConvertTo-Json | Set-Content "$env:RUNNER_TEMP/pulse-pe-manifest-report.json" -Encoding UTF8
       - name: Generate existing-icon size variants
         run: ./installer/windows/store/prepare-assets.ps1 -NewOutputDirectory "$env:RUNNER_TEMP/pulse-store-assets"
       - name: Build and validate unsigned MSIX
@@ -80,6 +101,8 @@ jobs:
             ${{ runner.temp }}/pulse-store-candidate/build-report.json
             ${{ runner.temp }}/pulse-store-candidate/staging/AppxManifest.xml
             ${{ runner.temp }}/pulse-store-assets/*.png
+            ${{ runner.temp }}/pulse-pe-manifest-report.json
+            ${{ runner.temp }}/pulse-player-embedded.manifest
           if-no-files-found: error
           retention-days: 14
       - name: Build separate Windows 11 lab package (never installs)
