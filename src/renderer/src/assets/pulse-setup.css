@@ -1,0 +1,119 @@
+.pulse-setup-beta {
+  --setup-ink: #eff8fa;
+  --setup-muted: #9cbbc8;
+  --setup-accent: #8df4d5;
+  --setup-line: #ffffff21;
+}
+.pulse-setup-beta #config {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: none;
+  margin: 0;
+  height: 100vh;
+  padding: clamp(24px, 4vw, 76px);
+  overflow: auto;
+  color: var(--setup-ink);
+  font-family: 'Maven Pro', sans-serif;
+  background: radial-gradient(ellipse at 95% 10%, #17485c 0, transparent 48%),
+    repeating-linear-gradient(90deg, transparent 0 95px, #ffffff03 95px 96px), #071923;
+  gap: 24px;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.pulse-setup-beta #config * { box-sizing: border-box; }
+.pulse-setup-beta #config .top-header {
+  order: 0;
+  padding: 0;
+  align-items: flex-start;
+  gap: 12px;
+}
+.pulse-setup-beta #config .pulse-brand-lockup { width: 180px; height: auto; margin: 0 0 12px; }
+.pulse-setup-beta #config h3 {
+  margin: 0;
+  text-align: left;
+  font-family: 'Maven Pro', sans-serif;
+  font-size: clamp(44px, 4.5vw, 86px);
+  line-height: .98;
+  letter-spacing: -.045em;
+  font-weight: 600;
+}
+.pulse-setup-beta #config .setup-kicker {
+  margin: 0;
+  color: var(--setup-accent);
+  font: 500 14px/1.4 'Inconsolata', monospace;
+  letter-spacing: .18em;
+}
+.pulse-setup-beta #config .active-page, .pulse-setup-beta #config .inactive-page { order: 1; }
+.pulse-setup-beta #config .shared-container {
+  width: 100%;
+  padding: 24px 0 0;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(32px, 6vw, 116px);
+  border-top: 1px solid var(--setup-line);
+}
+.pulse-setup-beta #config .item1 { padding: 0; }
+.pulse-setup-beta #config .activation-code { padding: 0; }
+.pulse-setup-beta #config h2 { font: 600 30px/1.1 'Maven Pro', sans-serif; margin: 0 0 14px; }
+.pulse-setup-beta #config p { line-height: 1.45; }
+.pulse-setup-beta #activation-code .activation-code > p { color: var(--setup-muted); max-width: 480px; font-size: 19px; }
+.pulse-setup-beta #config code.code-text {
+  display: block;
+  min-height: 110px;
+  font: 500 clamp(64px, 6vw, 116px)/1.15 'Inconsolata', monospace;
+  letter-spacing: .06em;
+  color: var(--setup-accent);
+  padding: 8px 0;
+  overflow-wrap: anywhere;
+}
+.pulse-setup-beta #config .hide-code--wrapper { color: var(--setup-muted); font-size: 15px; }
+.pulse-setup-beta #config .checkbox input[type="checkbox"] { display: inline-block; width: 16px; height: 16px; accent-color: var(--setup-accent); margin-right: 8px; }
+.pulse-setup-beta #config .checkbox input[type="checkbox"] + label { padding-left: 0; background: none; }
+.pulse-setup-beta #config .details { margin-top: 24px; color: var(--setup-muted); font-size: 13px; gap: 24px; }
+.pulse-setup-beta #config .setup-guide { padding: 0; align-self: start; }
+.pulse-setup-beta #config .setup-guide h2 { margin-top: 8px; }
+.pulse-setup-beta #config .setup-guide ol { margin: 16px 0; padding-left: 22px; color: var(--setup-muted); font-size: 18px; }
+.pulse-setup-beta #config .setup-guide li { padding: 5px 0 5px 7px; }
+.pulse-setup-beta #config .setup-guide li::marker { color: var(--setup-accent); font-family: 'Inconsolata', monospace; }
+.pulse-setup-beta #config .setup-signal { display: flex; gap: 7px; height: 46px; align-items: center; margin-bottom: 18px; }
+.pulse-setup-beta #config .setup-signal span { width: 10px; height: 20px; background: var(--setup-accent); transform: skew(-12deg); }
+.pulse-setup-beta #config .setup-signal span:nth-child(2), .pulse-setup-beta #config .setup-signal span:nth-child(4) { height: 32px; opacity: .65; }
+.pulse-setup-beta #config .setup-signal span:nth-child(3) { height: 46px; }
+.pulse-setup-beta #config .setup-qr { display: flex; gap: 20px; align-items: center; }
+.pulse-setup-beta #config .setup-qr canvas { width: 144px; height: 144px; border-radius: 8px; }
+.pulse-setup-beta #config .setup-qr p { font-size: 19px; }
+.pulse-setup-beta #config .setup-qr span { color: var(--setup-muted); font-size: 15px; }
+.pulse-setup-beta #config .setup-portal { color: var(--setup-muted); font: 16px 'Inconsolata', monospace; }
+.pulse-setup-beta #config .setup-footer { order: 2; border-top: 1px solid var(--setup-line); padding-top: 12px; display: flex; gap: 20px; justify-content: space-between; }
+.pulse-setup-beta #pulse-setup-state { margin: 0; color: var(--setup-accent); font-size: 16px; }
+.pulse-setup-beta #config details { max-width: 540px; font-size: 13px; color: var(--setup-muted); }
+.pulse-setup-beta #config details pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.pulse-setup-beta #config summary { cursor: pointer; color: var(--setup-ink); }
+.pulse-setup-beta #config .location-privacy { order: 3; margin: 0; padding: 12px 0; border: 0; border-top: 1px solid var(--setup-line); background: transparent; max-width: none; font-size: 12px; color: var(--setup-muted); }
+.pulse-setup-beta #config .location-privacy p { margin: 5px 0; }
+.pulse-setup-beta #config .location-privacy label { font-size: 14px; color: var(--setup-ink); }
+.pulse-setup-beta #config .toggle-config, .pulse-setup-beta #nav-config { display: none !important; }
+.pulse-setup-beta #config.setup--technician .toggle-config { display: flex !important; }
+.pulse-setup-beta #config .input-container input, .pulse-setup-beta #config select { color: #071923; }
+.pulse-setup-beta #config .setup-tech-note { color: var(--setup-muted); }
+.pulse-setup-beta #config .inactive-layout { min-height: 230px; color: var(--setup-ink); }
+.pulse-setup-beta #config-close { z-index: 2; }
+@media (max-width: 1100px) {
+  .pulse-setup-beta #config .shared-container { gap: 32px; }
+  .pulse-setup-beta #config h3 { font-size: 54px; }
+  .pulse-setup-beta #config .setup-guide ol { font-size: 16px; }
+}
+@media (orientation: portrait), (max-width: 700px) {
+  .pulse-setup-beta #config { padding: 32px; gap: 22px; }
+  .pulse-setup-beta #config .shared-container { grid-template-columns: 1fr; gap: 32px; }
+  .pulse-setup-beta #config .shared-container:not([style*="display: none"]) { display: grid !important; }
+  .pulse-setup-beta #config .item1, .pulse-setup-beta #config .item2 { width: 100% !important; }
+  .pulse-setup-beta #config .item1 { padding: 0 !important; }
+  .pulse-setup-beta #config .setup-guide { border-top: 1px solid var(--setup-line); padding-top: 24px; }
+  .pulse-setup-beta #config .setup-signal { display: none; }
+  .pulse-setup-beta #config .setup-footer { flex-direction: column; gap: 12px; }
+  .pulse-setup-beta #config code.code-text { font-size: clamp(56px, 9vw, 108px); }
+  .pulse-setup-beta #config h3 { font-size: clamp(38px, 7vw, 76px); }
+}

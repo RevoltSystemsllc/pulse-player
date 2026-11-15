@@ -20,6 +20,8 @@
  */
 import './assets/fonts.css';
 import './assets/main.css';
+import './assets/pulse-setup.css';
+import { pulseSetupBeta, isTechnicianShortcut } from './PulseSetup';
 import '@xibosignage/xibo-layout-renderer/dist/styles.css';
 
 import $ from 'jquery';
@@ -731,6 +733,14 @@ const openConfigPage = async () => {
  */
 const initNavBar = () => {
   navBarEnabled = true;
+  if (pulseSetupBeta) {
+    document.addEventListener('keydown', (event) => {
+      if (isTechnicianShortcut(event)) {
+        event.preventDefault();
+        void openConfigPage();
+      }
+    });
+  }
 
   $('#nav-status').off('click').on('click', () => {
     console.debug('[Renderer] showStatusWindow triggered from the nav bar');

@@ -124,7 +124,7 @@ function load(file, deps = {}, globals = {}) {
   const input = {checked: false, disabled: true, addEventListener(name, handler) { this.handler = handler; this.listenerCount = (this.listenerCount || 0) + 1; }};
   const status = {textContent: ''};
   let saved = false, failRead = false, failWrite = false;
-  const {ConfigHandler} = load('src/renderer/src/ConfigHandler.ts', {luxon: {}, axios: {}}, {
+  const {ConfigHandler} = load('src/renderer/src/ConfigHandler.ts', {luxon: {}, axios: {}, './PulseSetup': {pulseSetupBeta: false}}, {
    document: {getElementById: id => id === 'device-location-enabled' ? input : status},
    window: {playerAPI: {
     getDeviceLocationEnabled: async () => {if (failRead) throw Error('fixture'); return saved;},

@@ -1,13 +1,15 @@
 {
   "name": "pulse-player",
   "productName": "Pulse Player",
-  "version": "4.0.25",
-  "versionCode": 4025,
+  "version": "4.0.26",
+  "versionCode": 4026,
   "description": "Pulse Digital media player",
   "main": "./dist/main/index.js",
   "scripts": {
     "start": "electron-vite preview --outDir=dist",
     "build": "electron-vite build --outDir=dist",
+    "build:setup-lab": "node scripts/build-pulse-setup-lab.cjs",
+    "test:setup": "node scripts/test-pulse-setup-browser.cjs",
     "dev": "electron-vite dev --watch --sourcemap --debug hmr --remote-debugging-port=9222 --outDir=dist --inspect src/main/index.ts",
     "package": "npm run build && electron-forge package",
     "make": "npm run build && electron-forge make",
@@ -67,6 +69,7 @@
     "luxon": "^3.7.1",
     "nanoevents": "^9.1.0",
     "node-machine-id": "^1.1.12",
+    "qrcode": "1.5.4",
     "rollup-plugin-dts": "^6.2.3",
     "uuid": "^13.0.0",
     "xml2js": "^0.6.2"

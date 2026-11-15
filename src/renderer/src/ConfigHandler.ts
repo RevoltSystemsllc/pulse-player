@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import axios, { AxiosResponse } from "axios";
 import { ConfigData, MainCallbackType } from "../../shared/types";
+import { pulseSetupBeta, isPulseLabClaim, isTechnicianShortcut, renderPortalQr, setupState } from './PulseSetup';
 
 export type ConfigHandlerOpenOptions = {
     /** Called when the page is dismissed without the CMS details changing. */
@@ -33,6 +34,7 @@ export class ConfigHandler {
 
     /** Guards init() so reopening the page doesn't stack a second set of listeners. */
     private initialised = false;
+    private activationGeneration = 0;
     private locationListenerInstalled = false;
     private savedLocationEnabled = false;
 
@@ -69,9 +71,7 @@ export class ConfigHandler {
         this.slideIndex = 0;
         this.runApp = runApp;
 
-        console.debug('ConfigHandler initialized', {
-            config: this.config,
-        });
+        console.debug('ConfigHandler initialized');
     }
 
     init() {
@@ -83,6 +83,17 @@ export class ConfigHandler {
             return;
         }
         this.initialised = true;
+        if (pulseSetupBeta) {
+            void renderPortalQr();
+            document.addEventListener('keydown', (event) => {
+                if (!this.reopened && isTechnicianShortcut(event)) {
+                    event.preventDefault();
+                    this.$configPanel?.classList.toggle('setup--technician');
+                    if (this.$configPanel?.classList.contains('setup--technician')) this.handleManualConnect();
+                    else void this.run();
+                }
+            });
+        }
 
         // Elements involved in the config panel.
         this.$configPanel = document.getElementById('config');
@@ -226,7 +237,7 @@ export class ConfigHandler {
     }
 
     private static videoWallMode() {
-        return ConfigHandler.manualInput('video-wall-mode') as HTMLSelectElement;
+        return document.querySelector<HTMLSelectElement>('[name="video-wall-mode"]')!;
     }
 
     readonly handleManualSubmitButton = async (evt: Event) => {
@@ -295,6 +306,11 @@ export class ConfigHandler {
             return false;
         }
 
+        if (pulseSetupBeta && !isPulseLabClaim($cmsAddress.value.trim())) {
+            this.failManualField($cmsAddress, 'This preview connects only to the Pulse HA-test server.');
+            return false;
+        }
+
         return true;
     }
 
@@ -349,6 +365,10 @@ export class ConfigHandler {
 
             await this.runApp({ context: 'main' });
         } catch (error) {
+            if (pulseSetupBeta) {
+                this.showSetupFailure('Pulse could not complete the connection. Request a new code or check technician settings.');
+                return;
+            }
             console.debug('[ConfigHandler::handleRegisterDisplayCallback]', error);
 
             const reqError = error;
@@ -362,7 +382,15 @@ export class ConfigHandler {
     }
 
     handleCodeInterval(response: { data: { user_code: string; device_code: string } }) {
-        console.debug(response);
+        if (pulseSetupBeta && (!/^[a-z0-9]{6,12}$/i.test(response.data?.user_code ?? '')
+            || typeof response.data?.device_code !== 'string' || !response.data.device_code)) {
+            throw new Error('Invalid activation response');
+        }
+        const generation = this.activationGeneration;
+        const expires = Date.now() + 10 * 60 * 1000;
+        let polling = false;
+        if (this.codeInterval !== undefined) clearInterval(this.codeInterval);
+        if (pulseSetupBeta) setupState('Waiting for approval in your Pulse lab dashboard.');
 
         this.$configPanelCode?.style.setProperty('display', 'grid');
         this.$configPanelManual?.style.setProperty('display', 'none');
@@ -383,13 +411,21 @@ export class ConfigHandler {
 
         // Periodic polling to get the device code and configure the connection.
         this.codeInterval = setInterval(() => {
+            if (pulseSetupBeta && (polling || generation !== this.activationGeneration)) return;
+            if (pulseSetupBeta && Date.now() >= expires) {
+                this.showSetupFailure('This code has expired. Request a new connection code.');
+                return;
+            }
+            polling = true;
             axios.get('https://auth.signlicence.co.uk/getDetails?user_code='
-                + response.data.user_code + "&device_code=" + response.data.device_code)
+                + encodeURIComponent(response.data.user_code) + "&device_code=" + encodeURIComponent(response.data.device_code),
+                { timeout: 10000 })
                 .then(async (response: AxiosResponse) => {
-                    console.debug(response.data);
+                    if (pulseSetupBeta && generation !== this.activationGeneration) return;
 
                     // If we get a message back, continue on.
                     if (response.data.message) {
+                        if (pulseSetupBeta) setupState('Waiting for approval in your Pulse lab dashboard.');
                         return;
                     }
 
@@ -399,11 +435,12 @@ export class ConfigHandler {
                     // The response should contain the cmsKey.
                     const claimedCmsUrl = response.data.cmsAddress;
                     const claimedCmsKey = response.data.cmsKey;
-
-                    console.debug('ConfigHandler::handleCodeInterval - Got config from code polling', {
-                        cmsKey: claimedCmsKey,
-                        cmsUrl: claimedCmsUrl,
-                    });
+                    if (pulseSetupBeta && (!isPulseLabClaim(claimedCmsUrl)
+                        || typeof claimedCmsKey !== 'string' || !claimedCmsKey.trim())) {
+                        this.showSetupFailure('That connection was not approved for this Pulse lab. Request a new code.');
+                        return;
+                    }
+                    if (pulseSetupBeta) setupState('Approved. Connecting to your Pulse lab...');
 
                     // On a player that is already registered the claim was completed by
                     // whoever added the code at a CMS, not by the person standing at the
@@ -425,7 +462,11 @@ export class ConfigHandler {
 
                     this.applyClaim(claimedCmsUrl, claimedCmsKey);
                     await this.handleRegisterDisplayCallback();
-                });
+                }).catch(() => {
+                    if (pulseSetupBeta && generation === this.activationGeneration) {
+                        setupState('Connection interrupted. Retrying while this code is valid...');
+                    }
+                }).finally(() => { polling = false; });
         }, this.codeChangeInterval * 1000);
     }
 
@@ -608,6 +649,7 @@ export class ConfigHandler {
     }
 
     handleManualConnect() {
+        if (pulseSetupBeta) this.stopActivation();
         // Show manual configuration instead.
         this.hideClaimReview();
         this.$activePage?.style.setProperty('display', 'flex');
@@ -622,6 +664,13 @@ export class ConfigHandler {
         }
 
         this.hideCmsKeyCheckboxHandler();
+        if (pulseSetupBeta) {
+            ConfigHandler.manualInput('cms-key').type = 'password';
+            const hideKey = document.querySelector<HTMLInputElement>('.hide-cmsKey--wrapper input');
+            if (hideKey) hideKey.checked = true;
+            ConfigHandler.manualInput('cms-address').value ||= 'https://ha-test.pulsedigitalcms.com';
+            ConfigHandler.manualInput('display-name').focus();
+        }
     }
 
     /**
@@ -676,6 +725,11 @@ export class ConfigHandler {
         document.addEventListener('keydown', this.onKeydown);
 
         // Same as a fresh setup: show the activation code and start polling for a claim.
+        if (pulseSetupBeta) {
+            this.$configPanel?.classList.add('setup--technician');
+            this.handleManualConnect();
+            return Promise.resolve();
+        }
         return this.run();
     }
 
@@ -686,6 +740,10 @@ export class ConfigHandler {
     readonly close = () => {
         if (!this.reopened) {
             return;
+        }
+        if (pulseSetupBeta) {
+            this.stopActivation();
+            this.$configPanel?.classList.remove('setup--technician');
         }
 
         document.removeEventListener('keydown', this.onKeydown);
@@ -734,6 +792,11 @@ export class ConfigHandler {
     };
 
     async run() {
+        if (pulseSetupBeta) {
+            this.stopActivation();
+            setupState('Getting your connection code...');
+        }
+        const generation = this.activationGeneration;
         // Back to a clean waiting state. Blank the old code so a spent one can't sit on
         // screen while the replacement is being fetched.
         this.showActivationPanel();
@@ -741,6 +804,11 @@ export class ConfigHandler {
 
         await this.licenseGenerateCode()
             .catch((error) => {
+                if (pulseSetupBeta) {
+                    if (generation !== this.activationGeneration) return;
+                    this.showSetupFailure('Cannot reach the activation service. Check your network and try again.');
+                    return;
+                }
                 console.debug(error);
 
                 this.$activePage?.style.setProperty('display', 'none');
@@ -750,15 +818,31 @@ export class ConfigHandler {
     }
 
     async licenseGenerateCode() {
+        const generation = this.activationGeneration;
         return axios.post('https://auth.signlicence.co.uk/generateCode', {
             hardwareId: this.config.hardwareKey,
             type: 'linux',
             version: this.config.version
-        })
+        }, { timeout: 10000 })
             .then((response) => {
-                console.debug('ConfigHandler::licenseGenerateCode', response);
+                if (pulseSetupBeta && generation !== this.activationGeneration) return;
                 this.handleCodeInterval(response);
             });
+    }
+
+    private stopActivation() {
+        this.activationGeneration++;
+        if (this.codeInterval !== undefined) clearInterval(this.codeInterval);
+        this.codeInterval = undefined;
+        this.setActivationCodeText(null);
+    }
+
+    private showSetupFailure(message: string) {
+        this.stopActivation();
+        setupState(message);
+        this.$activePage?.style.setProperty('display', 'none');
+        this.$inactivePage?.style.setProperty('display', 'block');
+        this.$unavailableCode?.style.setProperty('display', 'flex');
     }
 
     private readonly onHideCodeChange = (event: Event) => {
@@ -822,6 +906,7 @@ export class ConfigHandler {
     }
 
     showSlides() {
+        if (pulseSetupBeta) return;
         const self = this;
         let slides = Array.from(<HTMLCollectionOf<HTMLElement>>document!.getElementsByClassName("mySlides"));
         let dots = Array.from(<HTMLCollectionOf<HTMLElement>>document!.getElementsByClassName("dot"));

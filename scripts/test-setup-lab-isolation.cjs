@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const config = fs.readFileSync(path.join(root, 'src/main/config/config.ts'), 'utf8');
+const {labIdentity} = require('../installer/windows/store/lab-identity.cjs');
+assert.match(config, /setupLab \? join\(dataDir, 'setup-lab-library'\)/);
+assert.match(config, /typeof __PULSE_SETUP_BETA__ !== 'undefined'/);
+assert.match(labIdentity().name, /\.Lab$/);
+const workflow = fs.readFileSync(path.join(root, '.github/workflows/pulse-setup-lab-windows.yml'), 'utf8');
+assert.match(workflow, /PULSE_SETUP_BETA: '1'/);
+assert.match(workflow, /PULSE_LAB_BUILD: '1'/);
+assert.doesNotMatch(workflow, /PULSE_STORE_BUILD|gh release|publish:|signtool|Add-AppxPackage/);
+assert.match(workflow, /build-lab-msix\.ps1/);
+assert.match(workflow, /codex\/pulse-first-setup-lab/);
+console.log(JSON.stringify({passed: true, checks: 8, scope: 'Lab cache, identity and workflow boundaries; not installed runtime verification'}));

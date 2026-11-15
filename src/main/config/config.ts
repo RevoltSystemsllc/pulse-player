@@ -204,7 +204,10 @@ export class Config {
     // Bulk data (library + file store) lives outside the versioned snap data directory so
     // snap refreshes don't duplicate it. See getPlayerDataDir().
     const dataDir = getPlayerDataDir(savePath);
-    this.library = isSnap() ? join(dataDir, 'xibo_library') : join(app.getPath('documents'), 'xibo_library');
+    // The setup preview must not use the original player's shared Documents cache.
+    const setupLab = typeof __PULSE_SETUP_BETA__ !== 'undefined' && __PULSE_SETUP_BETA__;
+    this.library = setupLab ? join(dataDir, 'setup-lab-library')
+      : isSnap() ? join(dataDir, 'xibo_library') : join(app.getPath('documents'), 'xibo_library');
     this.dbPath = join(dataDir, 'playerDb.db');
     this.settings = {};
     this.state = state;

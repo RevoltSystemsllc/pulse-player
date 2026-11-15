@@ -6,6 +6,7 @@ const {chromium} = require('playwright');
 
 const root = path.resolve(__dirname, '..');
 const dependencies = path.dirname(path.dirname(require.resolve('jquery/package.json')));
+const setupBeta = process.env.PULSE_SETUP_BETA === '1';
 
 (async () => {
   const bundle = await build({
@@ -13,9 +14,11 @@ const dependencies = path.dirname(path.dirname(require.resolve('jquery/package.j
     nodePaths: [dependencies], alias: {'@shared': path.join(root, 'src/shared')},
     bundle: true, write: false, format: 'iife', platform: 'browser',
     loader: {'.css': 'empty', '.png': 'dataurl', '.svg': 'dataurl'},
-    define: {__APP_VERSION__: JSON.stringify('navigation-fixture'), __APP_VERSION_CODE__: '0'},
+    define: {__APP_VERSION__: JSON.stringify('navigation-fixture'), __APP_VERSION_CODE__: '0',
+      __PULSE_SETUP_BETA__: JSON.stringify(setupBeta)},
   });
-  const html = fs.readFileSync(path.join(root, 'src/renderer/index.html'), 'utf8')
+  const baseHtml = fs.readFileSync(path.join(root, 'src/renderer/index.html'), 'utf8');
+  const html = (setupBeta ? require('./pulse-setup-html.cjs')(baseHtml) : baseHtml)
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '');
   const browser = await chromium.launch({headless: true});
   let checks = 0;
@@ -32,6 +35,7 @@ const dependencies = path.dirname(path.dirname(require.resolve('jquery/package.j
       await page.goto('http://pulse-fixture.invalid');
       await page.setContent(html);
       for (const filename of [path.join(root, 'src/renderer/src/assets/main.css'),
+        path.join(root, 'src/renderer/src/assets/pulse-setup.css'),
         path.join(dependencies, '@xibosignage/xibo-layout-renderer/dist/styles.css')]) {
         await page.addStyleTag({content: fs.readFileSync(filename, 'utf8')});
       }
@@ -67,6 +71,15 @@ const dependencies = path.dirname(path.dirname(require.resolve('jquery/package.j
       for (const [button, panel, close] of [
         ['nav-status', 'status', 'status-close'], ['nav-config', 'config', 'config-close'],
       ]) {
+        if (setupBeta && button === 'nav-config') {
+          assert.equal(await page.locator('#nav-config').isVisible(), false); checks++;
+          await page.keyboard.press('Control+Shift+P');
+          await page.locator('#config').waitFor({state: 'visible'}); checks++;
+          assert.equal(await page.locator('.config-container').isVisible(), true); checks++;
+          await page.locator('#config-close').click();
+          await page.locator('#config').waitFor({state: 'hidden'}); checks++;
+          continue;
+        }
         await page.evaluate(() => window.fixtureListeners.onMouseMoved());
         await page.locator('#' + button).hover();
         await page.mouse.down();
@@ -108,7 +121,7 @@ const dependencies = path.dirname(path.dirname(require.resolve('jquery/package.j
       checks++;
       await page.close();
     }
-    console.log(JSON.stringify({passed: true, checks, viewports: 2,
+    console.log(JSON.stringify({passed: true, checks, viewports: 2, setupBeta,
       scope: 'Real renderer, real layout engine and Chromium pointer events with mocked preload/CMS; not an installed Windows test'}));
   } finally {
     await browser.close();

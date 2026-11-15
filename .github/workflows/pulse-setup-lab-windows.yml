@@ -1,0 +1,76 @@
+name: Pulse Setup Lab Windows
+
+# Separate lab artifacts only. Never releases, submits to Store or installs remotely.
+on:
+  push:
+    branches: [codex/pulse-first-setup-lab]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lab-candidate:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      PULSE_SETUP_BETA: '1'
+      PULSE_LAB_BUILD: '1'
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install pinned dependencies
+        run: npm ci
+      - name: Run lab isolation and packaging checks
+        run: |
+          foreach ($test in @('test-setup-lab-isolation', 'test-store-packaging', 'test-store-lab-identity', 'test-location-privacy', 'test-store-dpi', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
+            node "scripts/$test.cjs"
+            if ($LASTEXITCODE -ne 0) { throw "Failed: $test" }
+          }
+      - name: Build Windows lab application
+        run: |
+          npm run build
+          if ($LASTEXITCODE -ne 0) { throw 'Lab compilation failed' }
+          npx electron-forge package --platform win32 --arch x64
+          if ($LASTEXITCODE -ne 0) { throw 'Lab packaging failed' }
+      - name: Build separate unsigned lab MSIX
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tools = @(Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/makeappx.exe" |
+            Sort-Object { [version]$_.Directory.Parent.Name } -Descending)
+          if (!$tools.Count) { throw 'Windows SDK MakeAppx missing' }
+          $apps = @(Get-ChildItem './out' -Directory | Where-Object {
+            $_.Name.EndsWith('-win32-x64') -and (Test-Path (Join-Path $_.FullName 'Pulse Player.exe'))
+          })
+          if ($apps.Count -ne 1) { throw 'Expected exactly one Windows lab application' }
+          ./installer/windows/store/prepare-assets.ps1 -NewOutputDirectory "$env:RUNNER_TEMP/pulse-lab-assets"
+          ./installer/windows/store/build-lab-msix.ps1 -AppDirectory $apps[0].FullName `
+            -AssetsDirectory "$env:RUNNER_TEMP/pulse-lab-assets" `
+            -NewOutputDirectory "$env:RUNNER_TEMP/pulse-setup-lab" -MakeAppx $tools[0].FullName
+          if ($LASTEXITCODE -ne 0) { throw 'Lab MSIX creation failed' }
+      - name: Capture actual Windows setup and check DPI
+        run: |
+          $apps = @(Get-ChildItem './out' -Directory | Where-Object {
+            $_.Name.EndsWith('-win32-x64') -and (Test-Path (Join-Path $_.FullName 'Pulse Player.exe'))
+          })
+          node scripts/capture-store-windows.cjs (Join-Path $apps[0].FullName 'Pulse Player.exe') "$env:RUNNER_TEMP/pulse-setup-lab-captures"
+          if ($LASTEXITCODE -ne 0) { throw 'Actual Windows setup qualification failed' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulse-setup-4026-LAB-ONLY
+          path: |
+            ${{ runner.temp }}/pulse-setup-lab/*.msix
+            ${{ runner.temp }}/pulse-setup-lab/lab-build-report.json
+            ${{ runner.temp }}/pulse-setup-lab/lab-identity.json
+            ${{ runner.temp }}/pulse-setup-lab-captures/*.png
+            ${{ runner.temp }}/pulse-setup-lab-captures/capture-report.json
+          if-no-files-found: error
+          retention-days: 14

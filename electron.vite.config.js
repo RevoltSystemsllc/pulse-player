@@ -21,10 +21,16 @@
 import {resolve} from 'path';
 import {readFileSync} from 'node:fs';
 import {defineConfig} from 'electron-vite';
+import pulseSetupHtml from './scripts/pulse-setup-html.cjs';
 
 export default defineConfig(({mode}) => {
   const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
+  const pulseSetupBeta = process.env.PULSE_SETUP_BETA === '1';
+  if (pulseSetupBeta && process.env.PULSE_STORE_BUILD === '1') {
+    throw new Error('Pulse setup beta is lab-only; it cannot be packaged as a Store release.');
+  }
   const versionDefine = {
+    __PULSE_SETUP_BETA__: JSON.stringify(pulseSetupBeta),
     __APP_VERSION__: JSON.stringify(packageJson.version),
     __APP_VERSION_CODE__: packageJson.versionCode || 0,
   };
@@ -92,7 +98,8 @@ export default defineConfig(({mode}) => {
         {
           name: 'html-transform',
           transformIndexHtml(html) {
-            return html.replace(/%__APP_VERSION__%/g, packageJson.version);
+            const transformed = pulseSetupBeta ? pulseSetupHtml(html) : html;
+            return transformed.replace(/%__APP_VERSION__%/g, packageJson.version);
           },
         },
       ],
