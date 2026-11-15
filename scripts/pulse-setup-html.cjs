@@ -15,8 +15,8 @@ module.exports = function pulseSetupHtml(html) {
         <div class="setup-qr"><canvas id="pulse-portal-qr" aria-label="QR code to open the Pulse lab sign-in page"></canvas><p>Scan to open Pulse.<br><span>Then enter the code shown here.</span></p></div>
         <p class="setup-portal">ha-test.pulsedigitalcms.com</p>
       </aside>`)
-    .replace(/<img[^>]+src="\/assets\/images\/graphic-05\.png"[^>]*\/>/, '<p class="setup-tech-note">Technician setup<br>Changes here can disconnect this player.</p>')
-    .replace(/<img[^>]+src="\/assets\/images\/(?:help|code|no-wifi)\.svg"[^>]*\/>/g, '')
+    .replace(/<img[^>]+src="(?:\.\/|\/)assets\/images\/graphic-05\.png"[^>]*\/>/, '<p class="setup-tech-note">Technician setup<br>Changes here can disconnect this player.</p>')
+    .replace(/<img[^>]+src="(?:\.\/|\/)assets\/images\/(?:help|code|no-wifi)\.svg"[^>]*\/>/g, '')
     .replace('<h2>Activation Code</h2>', '<h2>Your connection code</h2>')
     .replace('Keep this page open until this Pulse media player has been added to the CMS.', 'No server address. No shared key. Add this code in Pulse and keep this screen open.')
     .replace(/Sorry, the activation code is not available,[\s\S]*?above\./, 'We could not get a connection code. Check the network, then try again.')

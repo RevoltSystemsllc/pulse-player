@@ -38,6 +38,8 @@ jobs:
         run: |
           npm run build
           if ($LASTEXITCODE -ne 0) { throw 'Lab compilation failed' }
+          node scripts/test-setup-lab-isolation.cjs --compiled
+          if ($LASTEXITCODE -ne 0) { throw 'Compiled lab isolation or artwork check failed' }
           npx electron-forge package --platform win32 --arch x64
           if ($LASTEXITCODE -ne 0) { throw 'Lab packaging failed' }
       - name: Build separate unsigned lab MSIX
