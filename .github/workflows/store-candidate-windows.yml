@@ -34,6 +34,8 @@ jobs:
           $parseErrors = $null
           [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd 'installer/windows/store/inspect-dpi.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
           if ($parseErrors.Count) { throw "DPI diagnostic syntax errors: $parseErrors" }
+          [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $pwd 'installer/windows/store/verify-ci-dpi.ps1'), [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count) { throw "CI DPI diagnostic syntax errors: $parseErrors" }
           foreach ($test in @('test-store-packaging', 'test-store-lab-identity', 'test-store-startup', 'test-location-privacy', 'test-store-dpi', 'test-wack-report-audit', 'test-window-presentation', 'test-playback-orientation', 'test-wall-capture')) {
             node "scripts/$test.cjs"
             if ($LASTEXITCODE -ne 0) { throw "Failed: $test" }
@@ -63,6 +65,9 @@ jobs:
           [xml]$xml = Get-Content $manifest -Raw
           $first = @($xml.DocumentElement.ChildNodes | Where-Object NodeType -eq Element)[0]
           if ($first.LocalName -ne 'assemblyIdentity' -or $first.GetAttribute('name') -ne 'PulseDigitalCMS.PulseDigitalCMSPlayer' -or $first.GetAttribute('type') -ne 'win32') { throw 'Embedded application identity missing' }
+          $ns = New-Object System.Xml.XmlNamespaceManager($xml.NameTable)
+          $ns.AddNamespace('dpi','http://schemas.microsoft.com/SMI/2016/WindowsSettings')
+          if ($xml.SelectSingleNode('//dpi:dpiAwareness',$ns).InnerText -cne 'PerMonitorV2') { throw 'Embedded manifest must declare PerMonitorV2' }
           @{sourceCommit=$env:GITHUB_SHA;nativeManifestValidationPassed=$true;installedRetestPassed=$false;wackPassed=$false} |
             ConvertTo-Json | Set-Content "$env:RUNNER_TEMP/pulse-pe-manifest-report.json" -Encoding UTF8
       - name: Generate existing-icon size variants

@@ -79,6 +79,14 @@ async function capture(executable, output) {
       return {off: !input.checked, visible: box.top >= 0 && box.bottom <= innerHeight && box.width > 0};
     })()`);
     assert(privacy.off && privacy.visible, 'Device location must default off and its control must be visible');
+    const dpiProbe = spawnSync('powershell.exe', ['-NoProfile', '-File',
+      path.join(__dirname, '../installer/windows/store/verify-ci-dpi.ps1'),
+      '-PlayerProcessId', String(child.pid), '-ExpectedExecutable', executable,
+    ], { encoding: 'utf8', timeout: 20000, windowsHide: true });
+    assert.equal(dpiProbe.status, 0, `Native DPI probe failed: ${dpiProbe.stderr || dpiProbe.error || ''}`);
+    const nativeDpi = JSON.parse(dpiProbe.stdout.replace(/^\uFEFF/, ''));
+    assert.equal(nativeDpi.perMonitorV2, true, 'Actual Windows candidate must use PerMonitorV2');
+    assert(nativeDpi.windowDpi > 0);
     const privacyContrast = await evaluate(`(() => {
       const section = document.querySelector('.location-privacy');
       const rgb = value => value.match(/[0-9.]+/g).slice(0, 3).map(Number).map(v => {
@@ -129,6 +137,7 @@ async function capture(executable, output) {
       realPlayerRenderer: true, installedMsix: false, cmsEnrollmentPerformed: false,
       width: 1920, height: 1080, pairingCodeHidden: true,
       reviewRequiredBeforeListingUpload: true,
+      nativeDpi,
     }, null, 2));
     console.log('Captured actual Windows player setup screens; review PNGs before uploading.');
   } finally {

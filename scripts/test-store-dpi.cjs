@@ -22,7 +22,7 @@ for (const flag of [undefined, '0', '1']) {
    for (const [name, value] of Object.entries({type: 'win32', name: 'PulseDigitalCMS.PulseDigitalCMSPlayer', version: '4.0.0.0', processorArchitecture: 'amd64'})) {
     assert.equal(first.getAttribute(name), value); checks++;
    }
-   for (const required of ['>PerMonitor</dpiAwareness>', '>true/pm</dpiAware>', 'level="asInvoker" uiAccess="false"', 'Microsoft.Windows.Common-Controls', '>true</disableWindowFiltering>']) {
+   for (const required of ['>PerMonitorV2</dpiAwareness>', '>true/pm</dpiAware>', 'level="asInvoker" uiAccess="false"', 'Microsoft.Windows.Common-Controls', '>true</disableWindowFiltering>']) {
     assert(manifest.includes(required)); checks++;
    }
   }
