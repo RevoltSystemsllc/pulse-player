@@ -28,6 +28,7 @@ import { playbackOrientation } from '../../shared/playbackOrientation';
 import { RegisterDisplay } from '../xmds/response/registerDisplay';
 import { State } from '../common/state';
 import { getPlayerDataDir, isSnap } from '../common/paths';
+declare const __PULSE_SETUP_BETA__: boolean;
 
 /**
  * HTTP proxy carried over from a legacy 1.8 player install, or configured locally.
